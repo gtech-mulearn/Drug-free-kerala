@@ -10,18 +10,27 @@ import { cn } from "@/lib/utils";
 export const headingVariants = cva("text-balance", {
   variants: {
     size: {
-      counter: "text-counter font-semibold tracking-tight tabular-nums",
-      display: "text-display font-bold tracking-tight",
-      headline: "text-headline font-medium tracking-tight",
-      title: "text-title font-bold",
-      subtitle: "text-xl font-semibold",
+      hero: "text-hero font-normal tracking-display",
+      display: "text-display font-medium tracking-display",
+      headline: "text-headline font-medium tracking-display",
+      title: "text-title font-semibold tracking-tight",
+      subtitle: "text-xl font-semibold tracking-tight",
+      /** Bebas Neue numerals: the hero card count. */
+      counter: "font-poster text-counter tabular-nums",
+      /** Bebas Neue numerals at poster size: the pledge band count. */
+      poster: "font-poster text-poster tabular-nums",
+    },
+    /** Bold uppercase section titles ("OUR THREE PILLARS"). */
+    caps: {
+      true: "font-bold uppercase tracking-tight",
+      false: "",
     },
     align: {
       start: "text-start",
       center: "text-center",
     },
   },
-  defaultVariants: { size: "headline" },
+  defaultVariants: { size: "headline", caps: false },
 });
 
 type HeadingElement = "h1" | "h2" | "h3" | "h4" | "p" | "div";
@@ -29,8 +38,8 @@ type HeadingElement = "h1" | "h2" | "h3" | "h4" | "p" | "div";
 export type HeadingProps = React.HTMLAttributes<HTMLHeadingElement> &
   VariantProps<typeof headingVariants> & { as?: HeadingElement };
 
-export function Heading({ as: Tag = "h2", size, align, className, ...props }: HeadingProps) {
+export function Heading({ as: Tag = "h2", size, caps, align, className, ...props }: HeadingProps) {
   return (
-    <Tag data-slot="heading" className={cn(headingVariants({ size, align }), className)} {...props} />
+    <Tag data-slot="heading" className={cn(headingVariants({ size, caps, align }), className)} {...props} />
   );
 }

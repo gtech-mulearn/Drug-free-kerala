@@ -23,6 +23,12 @@ export const siteConfig = {
     { label: "WhatsApp community", icon: "whatsapp", href: "https://chat.whatsapp.com/BoA0aibDSqNL60qBRslCww" },
   ],
 
+  footer: {
+    closing: "Kerala, united against addiction.",
+    blurb:
+      "Empowering youth through innovation, creativity, and purpose-driven engagement to create a drug-free society across Kerala.",
+  },
+
   contact: {
     email: "info@mulearn.org",
     phone: { label: "+91 8590276004", href: "tel:+918590276004" },

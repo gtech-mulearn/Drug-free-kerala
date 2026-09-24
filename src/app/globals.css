@@ -1,12 +1,21 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import "lenis/dist/lenis.css";
 @import "../styles/tokens.css";
 @import "../styles/theme.css";
+@import "../styles/motion.css";
 
 @layer base {
   html {
-    scroll-behavior: smooth;
     -webkit-text-size-adjust: 100%;
+  }
+
+  /* With scripts, Lenis smooths scrolling. CSS smooth scrolling must stay off
+     then: it turns ScrollTrigger's measuring scrolls into racing animations. */
+  @media (scripting: none) and (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
   }
 
   * {
@@ -29,10 +38,6 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    html {
-      scroll-behavior: auto;
-    }
-
     *,
     ::before,
     ::after {
@@ -44,28 +49,22 @@
 }
 
 /*
- * Scroll-driven entrance animation, pure CSS (no JS, no hydration wait).
- * Progress is derived from scroll position, so anything on screen is always
- * at its final state; only content below the fold starts faded. Browsers
- * without support, reduced-motion users and print show everything as-is.
+ * Film grain: fractal noise as an inline SVG (img-src allows data:). Used by
+ * src/components/ui/grain.tsx at --grain-opacity.
  */
-@utility reveal {
-  @media screen and (prefers-reduced-motion: no-preference) {
-    @supports (animation-timeline: view()) {
-      animation: reveal-in linear both;
-      animation-timeline: view();
-      animation-range: entry 0% cover 20%;
-    }
-  }
+@utility bg-grain {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 220px 220px;
 }
 
-@keyframes reveal-in {
-  from {
-    opacity: 0;
-    translate: 0 1.5rem;
-  }
-  to {
-    opacity: 1;
-    translate: 0 0;
-  }
+/*
+ * Aurora: soft mint and teal light pooling on the forest base (the pledge
+ * dialog's visual panel). Built only from brand tokens.
+ */
+@utility bg-aurora {
+  background-color: var(--background);
+  background-image:
+    radial-gradient(55% 45% at 78% 18%, color-mix(in oklab, var(--mark-end) 55%, transparent), transparent 70%),
+    radial-gradient(45% 40% at 22% 62%, color-mix(in oklab, var(--mark-start) 22%, transparent), transparent 70%),
+    radial-gradient(80% 60% at 50% 110%, color-mix(in oklab, var(--mark-end) 30%, transparent), transparent 70%);
 }

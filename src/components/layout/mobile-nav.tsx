@@ -1,15 +1,17 @@
 "use client";
 
-import { ArrowRight, Menu } from "lucide-react";
-import { useRef, useState } from "react";
+import { Menu } from "lucide-react";
+import { useRef, useState, type CSSProperties } from "react";
+import { Logo } from "@/components/brand/logo";
+import { scrollToTarget } from "@/components/motion/scroll";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { siteConfig } from "@/config/site";
-import { usePledgeDialog } from "@/features/pledge/components/pledge-dialog-provider";
+import { usePledgeDialog, type PledgeDialogName } from "@/features/pledge/components/pledge-dialog-provider";
 
-type PendingAction = { type: "navigate"; href: string } | { type: "pledge" } | null;
+type PendingAction = { type: "navigate"; href: string } | { type: "dialog"; name: PledgeDialogName } | null;
 
-/** Slide-in site menu (all breakpoints, as in the original design). */
+/** Full-screen forest menu (below the desktop breakpoint). */
 export function MobileNav() {
   const [open, setOpen] = useState(false);
   const pending = useRef<PendingAction>(null);
@@ -23,14 +25,14 @@ export function MobileNav() {
     if (!action) return;
     event.preventDefault();
 
-    if (action.type === "pledge") {
-      openDialog("pledge");
+    if (action.type === "dialog") {
+      openDialog(action.name);
       return;
     }
     const target = document.querySelector<HTMLElement>(action.href);
     if (!target) return;
     window.history.pushState(null, "", action.href);
-    target.scrollIntoView({ block: "start" });
+    scrollToTarget(target);
     target.focus({ preventScroll: true });
   }
 
@@ -42,41 +44,47 @@ export function MobileNav() {
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" className="size-12 bg-foreground/10 hover:bg-foreground/20" aria-label="Open menu">
-          <Menu className="size-6" />
+        <Button variant="ghost" size="icon" className="bg-foreground/10 hover:bg-foreground/20 lg:hidden" aria-label="Open menu">
+          <Menu className="size-5" />
         </Button>
       </SheetTrigger>
 
-      <SheetContent className="theme-inverse px-8 pt-20 pb-10" onCloseAutoFocus={runPendingAction}>
+      <SheetContent
+        side="full"
+        className="theme-inverse gap-0 bg-background px-gutter pt-5 pb-8 text-foreground"
+        onCloseAutoFocus={runPendingAction}
+      >
         <SheetTitle className="sr-only">Menu</SheetTitle>
         <SheetDescription className="sr-only">Jump to a section or take the pledge.</SheetDescription>
 
-        <nav aria-label="Main" className="flex-1">
-          <ul className="flex flex-col items-center gap-8 sm:items-start">
-            {siteConfig.nav.map((item) => (
-              <li key={item.href}>
+        <Logo decorative className="h-10 self-start" />
+
+        <nav aria-label="Main" className="flex flex-1 items-center py-10">
+          <ul className="flex flex-col gap-1">
+            {siteConfig.nav.map((item, index) => (
+              <li key={item.href} className="overflow-hidden">
                 <a
                   href={item.href}
                   onClick={(event) => {
                     event.preventDefault();
                     close({ type: "navigate", href: item.href });
                   }}
-                  className="group relative inline-block py-1 text-2xl text-foreground/70 transition-colors hover:text-foreground focus-visible:text-foreground"
+                  style={{ "--line": index } as CSSProperties}
+                  className="menu-line block py-1 text-display font-medium tracking-display text-foreground/70 transition-colors duration-300 hover:text-foreground focus-visible:text-foreground"
                 >
                   {item.label}
-                  <span
-                    aria-hidden="true"
-                    className="absolute inset-x-0 -bottom-0.5 h-0.5 origin-left scale-x-0 bg-brand transition-transform duration-300 ease-standard group-hover:scale-x-100 group-focus-visible:scale-x-100"
-                  />
                 </a>
               </li>
             ))}
           </ul>
         </nav>
 
-        <div className="border-t pt-8">
-          <Button size="lg" className="w-full" aria-haspopup="dialog" onClick={() => close({ type: "pledge" })}>
-            Take the Pledge <ArrowRight />
+        <div className="grid gap-3 border-t pt-6 sm:grid-cols-2">
+          <Button size="lg" arrow aria-haspopup="dialog" onClick={() => close({ type: "dialog", name: "pledge" })}>
+            Take the pledge
+          </Button>
+          <Button size="lg" variant="outline" aria-haspopup="dialog" onClick={() => close({ type: "dialog", name: "lookup" })}>
+            Find my certificate
           </Button>
         </div>
       </SheetContent>

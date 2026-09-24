@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { openPage } from "./helpers";
 
 test.describe("landing page", () => {
   test("is rendered on the server, pledge count included", async ({ request }) => {
@@ -7,6 +8,8 @@ test.describe("landing page", () => {
     const html = await response.text();
     expect(html).toContain("5,886");
     expect(html).toContain("against addiction");
+    expect(html).toContain("Kerala Excise Department");
+    expect(html).toContain("#OperationThunder");
     expect(html).toContain("Our Journey");
     expect(html).not.toContain("gptengineer");
   });
@@ -40,7 +43,10 @@ test.describe("landing page", () => {
     page.on("pageerror", (error) => problems.push(error.message));
 
     await page.goto("/");
-    await page.mouse.wheel(0, 4000);
+    for (let step = 0; step < 10; step += 1) {
+      await page.mouse.wheel(0, 1200);
+      await page.waitForTimeout(150);
+    }
     await page.waitForLoadState("networkidle");
     expect(problems).toEqual([]);
   });
@@ -53,13 +59,17 @@ test.describe("landing page", () => {
     await expect(skip).toBeFocused();
   });
 
-  test("menu links scroll to their section", async ({ page }) => {
-    await page.goto("/");
-    await page.getByRole("button", { name: "Open menu" }).click();
-    await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Journey" }).click();
+  test("navigation links scroll to their section", async ({ page }, testInfo) => {
+    await openPage(page);
+    if (testInfo.project.name === "mobile") {
+      await page.getByRole("button", { name: "Open menu" }).click();
+      await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Journey" }).click();
+    } else {
+      await page.getByRole("navigation", { name: "Primary" }).getByRole("link", { name: "Journey" }).click();
+    }
 
     await expect(page).toHaveURL(/#journey$/);
-    await expect(page.getByRole("heading", { name: /From Darkness to Light/ })).toBeInViewport();
+    await expect(page.getByRole("heading", { name: "From Darkness to Light" })).toBeInViewport();
     await expect(page.locator("#journey")).toBeFocused();
   });
 
@@ -67,6 +77,24 @@ test.describe("landing page", () => {
     const response = await request.get("/api/pledges/total");
     expect(await response.json()).toEqual({ total: 5886 });
     expect(response.headers()["cache-control"]).toContain("s-maxage=15");
+  });
+
+  test("serves the link preview image", async ({ request }) => {
+    const response = await request.get("/opengraph-image");
+    expect(response.status()).toBe(200);
+    expect(response.headers()["content-type"]).toContain("image/png");
+  });
+
+  test("journey films and press photos open in the lightbox", async ({ page }) => {
+    await openPage(page);
+    await page.getByRole("button", { name: "Play video: GTech Marathon 2023" }).click();
+    await expect(page.getByRole("dialog").getByTitle("GTech Marathon 2023")).toBeVisible();
+    await page.keyboard.press("Escape");
+
+    // The press strip moves; pause it so the click lands where Playwright aims.
+    await page.getByRole("button", { name: "Pause press clippings" }).click();
+    await page.getByRole("button", { name: /^View photo: Dignitaries launching/ }).click();
+    await expect(page.getByRole("dialog").getByRole("img", { name: /Dignitaries launching/ })).toBeVisible();
   });
 
   test("unknown routes get the branded 404", async ({ page }) => {

@@ -6,6 +6,8 @@ import { cn } from "@/lib/utils";
 export const textVariants = cva("text-pretty", {
   variants: {
     size: {
+      /** A large opening sentence ("A powerful alliance between…"). */
+      statement: "text-statement font-medium tracking-display",
       lead: "text-lg leading-relaxed",
       body: "text-base leading-relaxed",
       sm: "text-sm leading-normal",

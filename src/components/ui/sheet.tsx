@@ -21,6 +21,8 @@ const sheetVariants = cva(
         right:
           "inset-y-0 right-0 h-dvh w-full data-[state=open]:slide-in-from-right data-[state=closed]:slide-out-to-right sm:max-w-sm",
         left: "inset-y-0 left-0 h-dvh w-full data-[state=open]:slide-in-from-left data-[state=closed]:slide-out-to-left sm:max-w-sm",
+        /** Full-screen menu. */
+        full: "inset-0 h-dvh w-full data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0",
       },
     },
     defaultVariants: { side: "right" },

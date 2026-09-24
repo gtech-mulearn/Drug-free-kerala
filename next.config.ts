@@ -6,6 +6,8 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   images: {
     formats: ["image/avif", "image/webp"],
+    // 55: the hero photo (grain and gradient hide the artefacts). 75: everything else.
+    qualities: [55, 75],
     remotePatterns: [{ protocol: "https", hostname: "i.ytimg.com", pathname: "/vi/**" }],
   },
   async headers() {

@@ -1,10 +1,11 @@
 import type { Metadata, Viewport } from "next";
 import { connection } from "next/server";
 import type { ReactNode } from "react";
+import { MotionRuntime } from "@/components/motion/motion-runtime";
 import { Toaster } from "@/components/ui/toaster";
 import { brandColors } from "@/config/brand";
 import { siteConfig } from "@/config/site";
-import { poppins } from "@/lib/fonts";
+import { fontVariables } from "@/lib/fonts";
 import "./globals.css";
 
 const title = `${siteConfig.name} | Take the pledge`;
@@ -28,7 +29,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: brandColors.black,
+  themeColor: brandColors.forest,
   colorScheme: "light",
 };
 
@@ -37,7 +38,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   await connection();
 
   return (
-    <html lang="en" className={poppins.variable}>
+    <html lang="en" className={fontVariables}>
       <body>
         <a
           href="#main"
@@ -47,6 +48,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         </a>
         {children}
         <Toaster />
+        <MotionRuntime />
       </body>
     </html>
   );

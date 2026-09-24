@@ -20,57 +20,79 @@
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
-  --color-surface-brand: var(--surface-brand);
-  --color-surface-brand-foreground: var(--surface-brand-foreground);
+  --color-surface-wash: var(--surface-wash);
+  --color-surface-wash-foreground: var(--surface-wash-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+  --color-highlight: var(--highlight);
   --color-brand: var(--brand);
   --color-brand-foreground: var(--brand-foreground);
+  --color-mark-start: var(--mark-start);
+  --color-mark-end: var(--mark-end);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-overlay: var(--overlay);
 
-  /* Typography. Poppins is self-hosted by next/font (src/lib/fonts.ts). */
-  --font-sans: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
+  /* Typography, self-hosted by next/font (src/lib/fonts.ts). Inter Tight for
+     everything; Bebas Neue (the logo's lettering) for numerals and the
+     wordmark only. */
+  --font-sans: var(--font-inter-tight), ui-sans-serif, system-ui, sans-serif;
+  --font-poster: var(--font-bebas), "Arial Narrow", ui-sans-serif, sans-serif;
 
-  /* Semantic type scale (fluid). Body sizes use Tailwind's xs–2xl scale. */
-  --text-counter: clamp(4.5rem, 3rem + 5vw, 6rem);
-  --text-counter--line-height: 1;
-  --text-display: clamp(1.875rem, 1rem + 3.5vw, 3rem);
-  --text-display--line-height: 1.15;
-  --text-headline: clamp(1.875rem, 1.5rem + 1.25vw, 2.25rem);
-  --text-headline--line-height: 1.2;
-  --text-title: clamp(1.25rem, 1.05rem + 0.9vw, 1.875rem);
-  --text-title--line-height: 1.25;
+  /* Semantic type scale (fluid). Body sizes use Tailwind's xs–5xl scale. */
+  --text-hero: clamp(3rem, 1rem + 5.2vw, 6.25rem);
+  --text-hero--line-height: 0.95;
+  --text-display: clamp(2.25rem, 1.4rem + 3vw, 4.5rem);
+  --text-display--line-height: 1;
+  --text-headline: clamp(1.75rem, 1.4rem + 1.2vw, 2.75rem);
+  --text-headline--line-height: 1.1;
+  --text-title: clamp(1.25rem, 1.05rem + 0.9vw, 1.75rem);
+  --text-title--line-height: 1.2;
+  --text-statement: clamp(1.375rem, 1.1rem + 1vw, 2rem);
+  --text-statement--line-height: 1.3;
+  --text-counter: clamp(3.5rem, 2.5rem + 3vw, 5.5rem);
+  --text-counter--line-height: 0.9;
+  --text-poster: clamp(5rem, 1rem + 17vw, 16rem);
+  --text-poster--line-height: 0.85;
 
-  /* Radius */
+  --tracking-display: -0.035em;
+
+  /* Radius: pills for actions, panels for photos, tiles for grids. */
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
-  --radius-card: 1.875rem;
-  --radius-section: clamp(3rem, 2rem + 4vw, 5rem);
+  --radius-card: 1.25rem;
+  --radius-panel: 1.75rem;
+  --radius-tile: 0.5rem;
 
   /* Elevation */
-  --shadow-card: 0 1px 2px 0 rgb(30 30 30 / 0.06), 0 1px 3px 0 rgb(30 30 30 / 0.08);
-  --shadow-raised: 0 16px 40px -16px rgb(30 30 30 / 0.35);
+  --shadow-card: 0 1px 2px 0 rgb(14 21 18 / 0.06), 0 1px 3px 0 rgb(14 21 18 / 0.08);
+  --shadow-raised: 0 16px 40px -16px rgb(14 21 18 / 0.35);
 
   /* Layout */
   --container-content: 80rem;
   --spacing-gutter: clamp(1rem, -0.5rem + 5vw, 5rem);
-  --spacing-section: clamp(3.5rem, 2.75rem + 3vw, 5rem);
+  --spacing-section: clamp(4.5rem, 3rem + 5vw, 8rem);
   --spacing-header: 5rem;
 
-  /* Motion */
+  /* Motion. ease-out-expo matches GSAP's "expo.out" (src/components/motion). */
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
   --ease-emphasized: cubic-bezier(0.3, 0, 0, 1);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 :root {
   --radius: 0.625rem;
+  /* Film grain over photos and dark bands (src/components/ui/grain.tsx). */
+  --grain-opacity: 0.08;
+}
+
+.theme-inverse {
+  --grain-opacity: 0.14;
 }

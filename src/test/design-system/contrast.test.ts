@@ -65,7 +65,7 @@ const TEXT_PAIRS: ReadonlyArray<readonly [string, string]> = [
   ["muted-foreground", "card"],
   ["muted-foreground", "muted"],
   ["accent-foreground", "accent"],
-  ["surface-brand-foreground", "surface-brand"],
+  ["surface-wash-foreground", "surface-wash"],
   ["primary-foreground", "primary"],
   ["primary", "background"],
   ["primary", "card"],
@@ -77,12 +77,18 @@ const TEXT_PAIRS: ReadonlyArray<readonly [string, string]> = [
   ["destructive", "background"],
   ["destructive", "card"],
   ["destructive", "popover"],
+  ["highlight", "background"],
+  ["highlight", "card"],
+  ["highlight", "popover"],
+  ["highlight", "muted"],
 ];
 
 /** Light-theme-only placements (brand-tinted surfaces exist only there). */
 const LIGHT_ONLY_TEXT_PAIRS: ReadonlyArray<readonly [string, string]> = [
   ["primary", "accent"],
-  ["primary", "surface-brand"],
+  ["primary", "surface-wash"],
+  ["highlight", "surface-wash"],
+  ["muted-foreground", "surface-wash"],
 ];
 
 /** Non-text UI boundaries: WCAG 1.4.11 (3:1). */
@@ -90,6 +96,8 @@ const UI_PAIRS: ReadonlyArray<readonly [string, string]> = [
   ["ring", "background"],
   ["ring", "card"],
   ["ring", "popover"],
+  ["ring", "surface-wash"],
+  ["input", "background"],
   ["input", "card"],
   ["input", "popover"],
 ];

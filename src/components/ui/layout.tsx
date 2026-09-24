@@ -34,7 +34,7 @@ export const sectionVariants = cva("relative isolate w-full", {
     tone: {
       default: "bg-background text-foreground",
       surface: "bg-card text-card-foreground",
-      brand: "bg-surface-brand text-surface-brand-foreground",
+      wash: "bg-surface-wash text-surface-wash-foreground",
       inverse: "theme-inverse bg-background text-foreground",
     },
     spacing: {
@@ -68,8 +68,9 @@ export type SectionHeaderProps = {
 export function SectionHeader({ title, description, align = "center", titleId, className }: SectionHeaderProps) {
   return (
     <header
+      data-reveal
       className={cn(
-        "reveal mb-10 flex flex-col gap-4 md:mb-12",
+        "mb-10 flex flex-col gap-4 md:mb-12",
         align === "center" && "items-center text-center",
         className,
       )}

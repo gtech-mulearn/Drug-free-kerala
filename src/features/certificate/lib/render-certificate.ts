@@ -1,8 +1,9 @@
 import { certificateInk } from "@/config/brand";
+import type { CertificateLanguage } from "../types";
 import { fitText, LINE_HEIGHT } from "./fit-text";
 
 type TextBlock = {
-  /** Anchor on a 1080 × 1080 design grid (horizontal centre of the text). */
+  /** Anchor on the 1920 × 1080 design grid (horizontal centre of the text). */
   x: number;
   y: number;
   /**
@@ -19,35 +20,52 @@ type TextBlock = {
   color: string;
 };
 
+const ID_BLOCK: TextBlock = {
+  x: 960,
+  y: 800,
+  anchor: "center",
+  maxWidth: 500,
+  maxLines: 1,
+  maxFontSize: 32,
+  minFontSize: 24,
+  color: certificateInk.id,
+};
+
+const nameBlock = (y: number): TextBlock => ({
+  x: 960,
+  y,
+  anchor: "last-baseline",
+  maxWidth: 1300,
+  maxLines: 2,
+  maxFontSize: 56,
+  minFontSize: 28,
+  maxHeight: 96,
+  color: certificateInk.name,
+});
+
 /**
- * Where text goes on certificate-template.jpg. The name sits in the gap
- * between the "I" (≈ y 395) and the pledge paragraph (≈ y 510); a single
- * line keeps the original baseline at y 480.
+ * Where text goes on certificate-template-{en,ml}.jpg (16:9, rendered from
+ * scripts/certificate/template.html; keep the two in sync). Measured ink:
+ *
+ * - en: "I," ends at y 397 and the pledge starts at 547; the name is centred
+ *   between them ("I, <name> solemnly pledge…").
+ * - ml: the logo ends at y 288 and the pledge starts at 493; the name sits
+ *   nearer the pledge it begins ("<name> എന്ന ഞാൻ…").
+ * - both: "My Unique Id" ends at 748 and the hashtag starts at 848; the ID sits
+ *   nearer its label.
+ *
+ * A second line of name grows upward.
  */
 export const CERTIFICATE_LAYOUT = {
-  grid: 1080,
-  name: {
-    x: 550,
-    y: 480,
-    anchor: "last-baseline",
-    maxWidth: 800,
-    maxLines: 2,
-    maxFontSize: 48,
-    minFontSize: 24,
-    maxHeight: 88,
-    color: certificateInk.name,
+  grid: { width: 1920, height: 1080 },
+  languages: {
+    en: { name: nameBlock(492), id: ID_BLOCK },
+    ml: { name: nameBlock(432), id: ID_BLOCK },
   },
-  id: {
-    x: 530,
-    y: 850,
-    anchor: "center",
-    maxWidth: 400,
-    maxLines: 1,
-    maxFontSize: 30,
-    minFontSize: 22,
-    color: certificateInk.id,
-  },
-} satisfies { grid: number; name: TextBlock; id: TextBlock };
+} satisfies {
+  grid: { width: number; height: number };
+  languages: Record<CertificateLanguage, { name: TextBlock; id: TextBlock }>;
+};
 
 function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
@@ -94,8 +112,10 @@ function drawBlock(
 export type RenderCertificateInput = {
   name: string;
   certificateId: string;
+  language: CertificateLanguage;
+  /** The artwork for `language`. */
   templateSrc: string;
-  /** CSS font-family list, e.g. `poppins.style.fontFamily`. */
+  /** CSS font-family list, e.g. `certificateFontFamily`. */
   fontFamily: string;
 };
 
@@ -103,8 +123,9 @@ export type RenderCertificateInput = {
 export async function renderCertificate(canvas: HTMLCanvasElement, input: RenderCertificateInput): Promise<void> {
   const [template] = await Promise.all([
     loadImage(input.templateSrc),
-    // Canvas text does not wait for web fonts; load Poppins first.
-    document.fonts.load(`700 48px ${input.fontFamily}`).catch(() => []),
+    // Canvas text does not wait for web fonts; load the faces this text needs
+    // (Poppins, plus Noto Sans Malayalam for names in Malayalam script).
+    document.fonts.load(`700 48px ${input.fontFamily}`, `${input.name} ${input.certificateId}`).catch(() => []),
   ]);
 
   canvas.width = template.naturalWidth;
@@ -113,9 +134,10 @@ export async function renderCertificate(canvas: HTMLCanvasElement, input: Render
   if (!context) throw new Error("Canvas 2D context is unavailable");
 
   context.drawImage(template, 0, 0);
-  const scale = canvas.width / CERTIFICATE_LAYOUT.grid;
-  drawBlock(context, input.name, CERTIFICATE_LAYOUT.name, scale, input.fontFamily);
-  drawBlock(context, input.certificateId, CERTIFICATE_LAYOUT.id, scale, input.fontFamily);
+  const scale = canvas.width / CERTIFICATE_LAYOUT.grid.width;
+  const layout = CERTIFICATE_LAYOUT.languages[input.language];
+  drawBlock(context, input.name, layout.name, scale, input.fontFamily);
+  drawBlock(context, input.certificateId, layout.id, scale, input.fontFamily);
 }
 
 /** PNG blob of the rendered canvas. */

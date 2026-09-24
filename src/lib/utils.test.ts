@@ -18,6 +18,16 @@ describe("cn", () => {
     expect(cn("px-gutter", "px-2")).toBe("px-2");
   });
 
+  it("knows the revamp's scales", () => {
+    expect(cn("text-hero", "text-foreground")).toBe("text-hero text-foreground");
+    expect(cn("text-poster", "text-highlight")).toBe("text-poster text-highlight");
+    expect(cn("rounded-panel", "rounded-tile")).toBe("rounded-tile");
+    expect(cn("font-poster", "font-semibold")).toBe("font-poster font-semibold");
+    expect(cn("font-poster", "font-sans")).toBe("font-sans");
+    expect(cn("tracking-display", "tracking-tight")).toBe("tracking-tight");
+    expect(cn("ease-out-expo", "ease-standard")).toBe("ease-standard");
+  });
+
   it("drops falsy values", () => {
     expect(cn("bg-card", false, undefined, null, "text-card-foreground")).toBe(
       "bg-card text-card-foreground",

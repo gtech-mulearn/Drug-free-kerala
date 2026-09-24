@@ -4,14 +4,15 @@ import { Copy, Download, Share2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { FaFacebookF, FaWhatsapp, FaXTwitter } from "react-icons/fa6";
 import { toast } from "sonner";
-import certificateTemplate from "@/assets/images/certificate-template.jpg";
+import templateEn from "@/assets/images/certificate-template-en.jpg";
+import templateMl from "@/assets/images/certificate-template-ml.jpg";
 import { Button } from "@/components/ui/button";
 import { FormAlert, Spinner } from "@/components/ui/form";
 import { siteConfig } from "@/config/site";
-import { poppins } from "@/lib/fonts";
+import { certificateFontFamily } from "../lib/font";
 import { canvasToPng, renderCertificate } from "../lib/render-certificate";
 import { buildShareMessage, certificateFileName, shareUrl, type ShareTarget } from "../lib/share";
-import type { Certificate } from "../types";
+import { CERTIFICATE_LANGUAGES, type Certificate, type CertificateLanguage } from "../types";
 
 const SHARE_TARGETS: { target: ShareTarget; label: string; Icon: typeof FaXTwitter }[] = [
   { target: "whatsapp", label: "Share on WhatsApp", Icon: FaWhatsapp },
@@ -19,16 +20,24 @@ const SHARE_TARGETS: { target: ShareTarget; label: string; Icon: typeof FaXTwitt
   { target: "facebook", label: "Share on Facebook", Icon: FaFacebookF },
 ];
 
+const TEMPLATES: Record<CertificateLanguage, string> = { en: templateEn.src, ml: templateMl.src };
+
 type RenderStatus = "rendering" | "ready" | "error";
 
 /** Renders, downloads and shares a pledge certificate. */
 export function CertificateView({ certificate }: { certificate: Certificate }) {
   const { name, certificateId } = certificate;
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [language, setLanguage] = useState<CertificateLanguage>("en");
   const [status, setStatus] = useState<RenderStatus>("rendering");
   const [canShareFiles, setCanShareFiles] = useState(false);
   const message = buildShareMessage(certificateId, siteConfig.url);
-  const fileName = certificateFileName(certificateId);
+  const fileName = certificateFileName(certificateId, language);
+
+  function chooseLanguage(next: CertificateLanguage) {
+    setStatus("rendering");
+    setLanguage(next);
+  }
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -38,8 +47,9 @@ export function CertificateView({ certificate }: { certificate: Certificate }) {
     renderCertificate(canvas, {
       name,
       certificateId,
-      templateSrc: certificateTemplate.src,
-      fontFamily: poppins.style.fontFamily,
+      language,
+      templateSrc: TEMPLATES[language],
+      fontFamily: certificateFontFamily,
     })
       .then(() => {
         if (cancelled) return;
@@ -55,7 +65,7 @@ export function CertificateView({ certificate }: { certificate: Certificate }) {
     return () => {
       cancelled = true;
     };
-  }, [name, certificateId, fileName]);
+  }, [name, certificateId, language, fileName]);
 
   async function download() {
     if (!canvasRef.current) return;
@@ -89,9 +99,39 @@ export function CertificateView({ certificate }: { certificate: Certificate }) {
 
   return (
     <div className="grid gap-5">
-      <div className="relative aspect-square w-full overflow-hidden rounded-lg border bg-muted">
+      <fieldset className="flex flex-wrap items-center justify-between gap-3">
+        <legend className="sr-only">Certificate language</legend>
+        <span aria-hidden="true" className="text-sm text-muted-foreground">
+          Certificate language
+        </span>
+        <div className="inline-flex rounded-full bg-muted p-1">
+          {CERTIFICATE_LANGUAGES.map(({ value, label }) => (
+            <label key={value} className="relative cursor-pointer">
+              <input
+                type="radio"
+                name={`certificate-language-${certificateId}`}
+                value={value}
+                checked={language === value}
+                onChange={() => chooseLanguage(value)}
+                lang={value}
+                aria-label={label}
+                className="peer sr-only"
+              />
+              <span
+                lang={value}
+                className="block rounded-full px-4 py-1.5 text-sm font-medium text-muted-foreground transition-colors duration-300 peer-checked:bg-primary peer-checked:text-primary-foreground peer-focus-visible:ring-[3px] peer-focus-visible:ring-ring/60"
+              >
+                {label}
+              </span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
+
+      <div className="relative aspect-video w-full overflow-hidden rounded-lg border bg-muted">
         <canvas
           ref={canvasRef}
+          lang={language}
           role="img"
           aria-label={`Drug Free Kerala pledge certificate for ${name}, ID ${certificateId}`}
           className="size-full"
@@ -119,7 +159,7 @@ export function CertificateView({ certificate }: { certificate: Certificate }) {
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
-        <Button size="lg" onClick={download} disabled={status !== "ready"}>
+        <Button size="lg" onClick={download} disabled={status !== "ready"} className={canShareFiles ? undefined : "sm:col-span-2"}>
           <Download /> Download
         </Button>
         {canShareFiles ? (

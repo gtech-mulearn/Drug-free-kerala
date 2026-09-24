@@ -22,5 +22,7 @@ describe("share helpers", () => {
 
   it("names downloads after the certificate", () => {
     expect(certificateFileName("DKFC00042")).toBe("DrugFreeKerala-Certificate-DKFC00042.png");
+    expect(certificateFileName("DKFC00042", "en")).toBe("DrugFreeKerala-Certificate-DKFC00042.png");
+    expect(certificateFileName("DKFC00042", "ml")).toBe("DrugFreeKerala-Certificate-DKFC00042-ml.png");
   });
 });

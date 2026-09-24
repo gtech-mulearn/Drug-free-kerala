@@ -2,6 +2,7 @@
 
 import { startTransition, useActionState, useRef, useState, type FormEvent } from "react";
 import { z } from "zod";
+import { DoveMark } from "@/components/brand/dove-mark";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { FormAlert, FormField, Input, Spinner } from "@/components/ui/form";
@@ -11,34 +12,51 @@ import { LookupFormSchema } from "../schema";
 import { IDLE, type LookupState } from "../types";
 import { CommonStatusAlert, useFocusFirstInvalid } from "./form-parts";
 
-type LookupDialogProps = { open: boolean; onOpenChange: (open: boolean) => void };
+type LookupDialogProps = {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onTakePledge: () => void;
+};
 
-export function LookupDialog({ open, onOpenChange }: LookupDialogProps) {
+/**
+ * The secondary dialog: the pledge dialog's dark inputs and type, but a
+ * compact single column without the visual panel.
+ */
+export function LookupDialog({ open, onOpenChange, onTakePledge }: LookupDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-xl">
-        <LookupFlow />
+      <DialogContent className="theme-inverse gap-0 px-6 pt-7 pb-6 sm:max-w-md sm:px-8 sm:pt-8 sm:has-[canvas]:max-w-2xl">
+        <LookupFlow onTakePledge={onTakePledge} />
       </DialogContent>
     </Dialog>
   );
 }
 
-export function LookupFlow() {
+function LookupHeader({ title, description }: { title: string; description: string }) {
+  return (
+    <DialogHeader className="gap-3">
+      <DoveMark className="h-9 w-auto self-start" />
+      <DialogTitle>{title}</DialogTitle>
+      <DialogDescription>{description}</DialogDescription>
+    </DialogHeader>
+  );
+}
+
+export function LookupFlow({ onTakePledge }: { onTakePledge: () => void }) {
   const [state, submit, isPending] = useActionState(lookupCertificate, IDLE);
 
   if (state.status === "found") {
     return (
       <>
-        <DialogHeader>
-          <DialogTitle>Your pledge certificate</DialogTitle>
-          <DialogDescription>Welcome back. Download it again or share it.</DialogDescription>
-        </DialogHeader>
-        <CertificateView certificate={{ name: state.name, certificateId: state.certificateId }} />
+        <LookupHeader title="Your pledge certificate" description="Welcome back. Download it again or share it." />
+        <div className="mt-6">
+          <CertificateView certificate={{ name: state.name, certificateId: state.certificateId }} />
+        </div>
       </>
     );
   }
 
-  return <LookupForm state={state} submit={submit} isPending={isPending} />;
+  return <LookupForm state={state} submit={submit} isPending={isPending} onTakePledge={onTakePledge} />;
 }
 
 type FieldErrors = Partial<Record<"name" | "email", string[]>>;
@@ -47,10 +65,12 @@ function LookupForm({
   state,
   submit,
   isPending,
+  onTakePledge,
 }: {
   state: LookupState;
   submit: (data: FormData) => void;
   isPending: boolean;
+  onTakePledge: () => void;
 }) {
   const formRef = useRef<HTMLFormElement>(null);
   const [clientErrors, setClientErrors] = useState<FieldErrors | null>(null);
@@ -71,14 +91,12 @@ function LookupForm({
 
   return (
     <>
-      <DialogHeader>
-        <DialogTitle>Find your certificate</DialogTitle>
-        <DialogDescription>
-          Enter the name and email you pledged with. We only show a certificate when both match.
-        </DialogDescription>
-      </DialogHeader>
+      <LookupHeader
+        title="Find your certificate"
+        description="Enter the name and email you pledged with. We only show a certificate when both match."
+      />
 
-      <form ref={formRef} onSubmit={handleSubmit} noValidate aria-busy={isPending} className="grid gap-5">
+      <form ref={formRef} onSubmit={handleSubmit} noValidate aria-busy={isPending} className="mt-7 grid gap-5">
         <FormField name="name" label="Name you pledged with" errors={errors?.name} required>
           {(control) => <Input {...control} autoComplete="name" maxLength={80} />}
         </FormField>
@@ -95,7 +113,7 @@ function LookupForm({
           <CommonStatusAlert state={state} />
         )}
 
-        <Button type="submit" size="lg" disabled={isPending} className="w-full">
+        <Button type="submit" variant="secondary" size="lg" disabled={isPending} className="w-full">
           {isPending ? (
             <>
               <Spinner /> Searching…
@@ -105,6 +123,17 @@ function LookupForm({
           )}
         </Button>
       </form>
+
+      <p className="mt-6 border-t pt-5 text-sm text-muted-foreground">
+        Haven&apos;t pledged yet?{" "}
+        <button
+          type="button"
+          onClick={onTakePledge}
+          className="rounded-sm font-medium text-foreground underline-offset-4 hover:underline"
+        >
+          Take the pledge
+        </button>
+      </p>
     </>
   );
 }

@@ -84,6 +84,27 @@ describe("PledgeDialog", () => {
     expect(onFindCertificate).toHaveBeenCalled();
   });
 
+  it("walks the step cards through pledge → certificate → share", async () => {
+    const { user } = renderDialog();
+    const steps = () => within(screen.getByRole("list", { name: "Pledge steps" })).getAllByRole("listitem");
+    const current = () => steps().find((step) => step.getAttribute("aria-current") === "step")?.textContent;
+
+    expect(current()).toContain("Take the pledge");
+    await fillValidForm(user);
+    await user.click(screen.getByRole("button", { name: "Take the Pledge" }));
+    await screen.findByRole("heading", { name: "Pledge successful!" });
+    expect(current()).toContain("Get your certificate");
+
+    await user.click(screen.getByRole("button", { name: "View certificate" }));
+    expect(current()).toContain("Share it");
+  });
+
+  it("links people who already pledged to the certificate finder", async () => {
+    const { user } = renderDialog();
+    await user.click(screen.getByRole("button", { name: "Find your certificate" }));
+    expect(onFindCertificate).toHaveBeenCalled();
+  });
+
   it("explains rate limiting in minutes", async () => {
     respondWith({ status: "rate_limited", retryAfterSeconds: 290 });
     const { user } = renderDialog();

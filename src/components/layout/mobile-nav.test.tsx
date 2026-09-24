@@ -22,13 +22,16 @@ describe("MobileNav", () => {
     expect(within(menu).getByRole("button", { name: "Close menu" })).toBeInTheDocument();
   });
 
-  it("closes the menu before opening the pledge form", async () => {
+  it.each([
+    ["Take the pledge", "pledge"],
+    ["Find my certificate", "lookup"],
+  ])("closes the menu before opening %s", async (label, dialog) => {
     const user = userEvent.setup();
     render(<MobileNav />);
     await user.click(screen.getByRole("button", { name: "Open menu" }));
-    await user.click(screen.getByRole("button", { name: /Take the Pledge/ }));
+    await user.click(screen.getByRole("button", { name: label }));
 
     await waitFor(() => expect(screen.queryByRole("dialog", { name: "Menu" })).not.toBeInTheDocument());
-    expect(openDialog).toHaveBeenCalledWith("pledge");
+    expect(openDialog).toHaveBeenCalledWith(dialog);
   });
 });

@@ -50,7 +50,13 @@ export function PledgeDialogProvider({ children }: { children: ReactNode }) {
           onFindCertificate={() => openDialog("lookup")}
         />
       ) : null}
-      {mounted.has("lookup") ? <LookupDialog open={active === "lookup"} onOpenChange={onOpenChange("lookup")} /> : null}
+      {mounted.has("lookup") ? (
+        <LookupDialog
+          open={active === "lookup"}
+          onOpenChange={onOpenChange("lookup")}
+          onTakePledge={() => openDialog("pledge")}
+        />
+      ) : null}
     </PledgeDialogContext>
   );
 }

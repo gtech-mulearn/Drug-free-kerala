@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { openPage } from "./helpers";
 
 const STATEMENTS = [
   "I am aware of the harmful effects",
@@ -11,7 +12,7 @@ const STATEMENTS = [
 const uniqueEmail = (label: string) => `${label}.${Date.now()}.${Math.random().toString(36).slice(2, 7)}@example.com`;
 
 async function openPledgeForm(page: Page) {
-  await page.goto("/");
+  await openPage(page);
   await page.getByRole("button", { name: "Take the Pledge" }).first().click();
   return page.getByRole("dialog", { name: "Join the Movement" });
 }
@@ -40,6 +41,19 @@ test.describe("pledge", () => {
     await expect(downloadButton).toBeEnabled();
     const [download] = await Promise.all([page.waitForEvent("download"), downloadButton.click()]);
     expect(download.suggestedFilename()).toBe(`DrugFreeKerala-Certificate-${certificateId}.png`);
+  });
+
+  test("the certificate can be downloaded in Malayalam", async ({ page }) => {
+    const dialog = await submitPledge(page, "Anjali Nair", uniqueEmail("ml-cert"));
+    const certificateId = await dialog.getByText(/^DKFC\d{5}$/).textContent();
+    await dialog.getByRole("button", { name: "View certificate" }).click();
+
+    await dialog.getByText("മലയാളം").click();
+    await expect(dialog.getByRole("radio", { name: "മലയാളം" })).toBeChecked();
+    const downloadButton = dialog.getByRole("button", { name: "Download" });
+    await expect(downloadButton).toBeEnabled();
+    const [download] = await Promise.all([page.waitForEvent("download"), downloadButton.click()]);
+    expect(download.suggestedFilename()).toBe(`DrugFreeKerala-Certificate-${certificateId}-ml.png`);
   });
 
   test("names in Malayalam script are accepted and rendered", async ({ page }) => {
@@ -75,14 +89,14 @@ test.describe("pledge", () => {
   });
 
   test("#pledge deep link opens the form", async ({ page }) => {
-    await page.goto("/#pledge");
+    await openPage(page, "/#pledge");
     await expect(page.getByRole("dialog", { name: "Join the Movement" })).toBeVisible();
   });
 });
 
 test.describe("certificate lookup", () => {
   async function lookUp(page: Page, name: string, email: string) {
-    await page.goto("/");
+    await openPage(page);
     await page.getByRole("button", { name: "Find my certificate" }).first().click();
     const dialog = page.getByRole("dialog", { name: "Find your certificate" });
     await dialog.getByLabel("Name you pledged with").fill(name);

@@ -1,5 +1,9 @@
-export function certificateFileName(certificateId: string): string {
-  return `DrugFreeKerala-Certificate-${certificateId}.png`;
+import type { CertificateLanguage } from "../types";
+
+/** English keeps the original file name; other languages add their code. */
+export function certificateFileName(certificateId: string, language: CertificateLanguage = "en"): string {
+  const suffix = language === "en" ? "" : `-${language}`;
+  return `DrugFreeKerala-Certificate-${certificateId}${suffix}.png`;
 }
 
 /** The campaign's share message (copy approved for the original launch). */

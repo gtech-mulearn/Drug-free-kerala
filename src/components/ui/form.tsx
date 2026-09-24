@@ -24,7 +24,7 @@ export function Input({ className, type = "text", ...props }: React.ComponentPro
       type={type}
       data-slot="input"
       className={cn(
-        "flex h-11 w-full min-w-0 rounded-md border border-input bg-card px-4 text-base text-card-foreground shadow-xs md:text-sm",
+        "flex h-12 w-full min-w-0 rounded-xl border border-input bg-card px-4 text-base text-card-foreground",
         "transition-[border-color,box-shadow] duration-200 ease-standard placeholder:text-muted-foreground",
         "outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/40",
         "aria-invalid:border-destructive aria-invalid:ring-destructive/20",
