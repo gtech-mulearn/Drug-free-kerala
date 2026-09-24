@@ -8,7 +8,7 @@ import { DOVE_BOX } from "@/components/brand/dove-path";
  * Progress is real: finished ÷ discovered across
  *   · every script, stylesheet and preload the document references
  *     (finished = a Resource Timing entry exists for it),
- *   · every eagerly loading <img> (finished = complete),
+ *   · every eagerly loading image element (finished = complete),
  *   · three milestones: document parsed, fonts ready, window load.
  * It reaches 100 only once the page has loaded. The count chases the real
  * value at most 100 % per 0.8 s, so a cached visit still reads as a count.
