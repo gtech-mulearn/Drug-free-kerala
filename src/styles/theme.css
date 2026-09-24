@@ -1,0 +1,76 @@
+/*
+ * Tailwind theme: exposes design tokens as utilities.
+ *
+ * `inline` makes every utility reference the CSS variable directly
+ * (`background-color: var(--primary)`), which is what lets `.theme-inverse`
+ * re-theme a subtree at runtime.
+ */
+@theme inline {
+  /* Only semantic colours exist. Tailwind's default palette is removed, so
+     `bg-gray-100` or `text-green-500` generate nothing. */
+  --color-*: initial;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-surface-brand: var(--surface-brand);
+  --color-surface-brand-foreground: var(--surface-brand-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-overlay: var(--overlay);
+
+  /* Typography. Poppins is self-hosted by next/font (src/lib/fonts.ts). */
+  --font-sans: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
+
+  /* Semantic type scale (fluid). Body sizes use Tailwind's xs–2xl scale. */
+  --text-counter: clamp(4.5rem, 3rem + 5vw, 6rem);
+  --text-counter--line-height: 1;
+  --text-display: clamp(1.875rem, 1rem + 3.5vw, 3rem);
+  --text-display--line-height: 1.15;
+  --text-headline: clamp(1.875rem, 1.5rem + 1.25vw, 2.25rem);
+  --text-headline--line-height: 1.2;
+  --text-title: clamp(1.25rem, 1.05rem + 0.9vw, 1.875rem);
+  --text-title--line-height: 1.25;
+
+  /* Radius */
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-card: 1.875rem;
+  --radius-section: clamp(3rem, 2rem + 4vw, 5rem);
+
+  /* Elevation */
+  --shadow-card: 0 1px 2px 0 rgb(30 30 30 / 0.06), 0 1px 3px 0 rgb(30 30 30 / 0.08);
+  --shadow-raised: 0 16px 40px -16px rgb(30 30 30 / 0.35);
+
+  /* Layout */
+  --container-content: 80rem;
+  --spacing-gutter: clamp(1rem, -0.5rem + 5vw, 5rem);
+  --spacing-section: clamp(3.5rem, 2.75rem + 3vw, 5rem);
+  --spacing-header: 5rem;
+
+  /* Motion */
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-emphasized: cubic-bezier(0.3, 0, 0, 1);
+}
+
+:root {
+  --radius: 0.625rem;
+}

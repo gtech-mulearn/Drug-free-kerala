@@ -1,1 +1,22 @@
-node_modules
+# dependencies
+node_modules/
+
+# next.js / build output
+.next/
+out/
+dist/
+*.tsbuildinfo
+next-env.d.ts
+
+# testing
+coverage/
+playwright-report/
+test-results/
+blob-report/
+
+# env files (commit .env.example only)
+.env
+.env*.local
+
+# platforms
+.vercel

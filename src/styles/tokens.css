@@ -1,0 +1,128 @@
+/*
+ * Drug Free Kerala design tokens: the single source of truth for colour.
+ *
+ * Layer 1 · Palette (--palette-*)
+ *   Raw brand colours. Referenced ONLY by the semantic layer below, never by
+ *   components, and never exposed as Tailwind utilities.
+ *
+ * Layer 2 · Semantic tokens
+ *   What a colour is FOR (background, primary, muted-foreground, …). These are
+ *   the only colours components may use; theme.css exposes them as utilities
+ *   (bg-primary, text-muted-foreground, border-input, …).
+ *
+ * Layer 3 · Themes
+ *   `:root` is the light theme. `.theme-inverse` re-maps the SAME semantic
+ *   names for dark surfaces (hero, header, footer, navigation drawer). A
+ *   component never branches on theme; it inherits the right values from the
+ *   nearest themed ancestor.
+ *
+ * Guarantees, enforced by src/test/design-system/*.test.ts:
+ *   · every text/surface pair below meets WCAG 2.2 AA (4.5:1) in both themes
+ *   · focus rings and input borders meet 3:1 against their surfaces
+ *   · components contain no raw colours, palette classes or `dark:` variants
+ *
+ * Adding a token: add it to BOTH theme blocks, map it in theme.css, add its
+ * pairs to src/test/design-system/contrast.test.ts, document it in
+ * docs/design-system.md.
+ */
+
+:root {
+  /* ── Layer 1 · Palette ──────────────────────────────────────────────── */
+  --palette-green-50: #edf8ef;
+  --palette-green-100: #dbf3df;
+  --palette-green-200: #b9e5c0;
+  --palette-green-300: #8fd39b;
+  --palette-green-400: #5cb769; /* the brand green */
+  --palette-green-500: #4ca357;
+  --palette-green-600: #3a8a47;
+  --palette-green-700: #2b7036;
+  --palette-green-800: #22592b;
+  --palette-green-900: #1a4421;
+  --palette-green-950: #0f2914;
+
+  --palette-neutral-0: #ffffff;
+  --palette-neutral-50: #f2f2f2;
+  --palette-neutral-100: #efeeec;
+  --palette-neutral-200: #e4e3e0;
+  --palette-neutral-300: #d9d9d9;
+  --palette-neutral-400: #a3a3a3;
+  --palette-neutral-500: #8a8a8a;
+  --palette-neutral-600: #525b65;
+  --palette-neutral-700: #3f3f46;
+  --palette-neutral-800: #2a2a2a;
+  --palette-neutral-900: #1e1e1e;
+  --palette-neutral-950: #0a0a0a;
+  --palette-neutral-1000: #000000;
+
+  --palette-red-400: #f97066;
+  --palette-red-700: #b42318;
+
+  /* ── Layer 2 · Semantic tokens, light theme ─────────────────────────── */
+  /* Surfaces */
+  --background: var(--palette-neutral-100);
+  --foreground: var(--palette-neutral-900);
+  --card: var(--palette-neutral-0);
+  --card-foreground: var(--palette-neutral-900);
+  --popover: var(--palette-neutral-0);
+  --popover-foreground: var(--palette-neutral-900);
+  --muted: var(--palette-neutral-200);
+  --muted-foreground: var(--palette-neutral-600);
+  --accent: var(--palette-green-100);
+  --accent-foreground: var(--palette-neutral-900);
+  --surface-brand: var(--palette-green-50);
+  --surface-brand-foreground: var(--palette-neutral-900);
+
+  /* Actions. #5cb769 fails AA with white text (2.5:1), so light-theme
+     actions use green-700 (6.0:1). The bright brand green returns as
+     `primary` inside .theme-inverse, where it passes (8.4:1). */
+  --primary: var(--palette-green-700);
+  --primary-foreground: var(--palette-neutral-0);
+  --secondary: var(--palette-neutral-0);
+  --secondary-foreground: var(--palette-neutral-900);
+  --destructive: var(--palette-red-700);
+  --destructive-foreground: var(--palette-neutral-0);
+
+  /* Brand: decorative fills (blobs, underlines, checkmarks). Text placed ON
+     a brand fill uses --brand-foreground. */
+  --brand: var(--palette-green-400);
+  --brand-foreground: var(--palette-green-950);
+
+  /* Lines, focus, scrims */
+  --border: var(--palette-neutral-300);
+  --input: var(--palette-neutral-500);
+  --ring: var(--palette-green-700);
+  --overlay: var(--palette-neutral-1000);
+}
+
+/* ── Layer 3 · Inverse theme (dark surfaces) ──────────────────────────── */
+.theme-inverse {
+  color-scheme: dark;
+
+  --background: var(--palette-neutral-1000);
+  --foreground: var(--palette-neutral-50);
+  --card: var(--palette-neutral-950);
+  --card-foreground: var(--palette-neutral-50);
+  --popover: var(--palette-neutral-950);
+  --popover-foreground: var(--palette-neutral-50);
+  --muted: var(--palette-neutral-800);
+  --muted-foreground: var(--palette-neutral-400);
+  --accent: var(--palette-neutral-800);
+  --accent-foreground: var(--palette-neutral-50);
+  --surface-brand: var(--palette-green-950);
+  --surface-brand-foreground: var(--palette-neutral-50);
+
+  --primary: var(--palette-green-400);
+  --primary-foreground: var(--palette-green-950);
+  --secondary: var(--palette-neutral-800);
+  --secondary-foreground: var(--palette-neutral-50);
+  --destructive: var(--palette-red-400);
+  --destructive-foreground: var(--palette-neutral-1000);
+
+  --brand: var(--palette-green-400);
+  --brand-foreground: var(--palette-green-950);
+
+  --border: var(--palette-neutral-800);
+  --input: var(--palette-neutral-500);
+  --ring: var(--palette-green-400);
+  --overlay: var(--palette-neutral-1000);
+}
