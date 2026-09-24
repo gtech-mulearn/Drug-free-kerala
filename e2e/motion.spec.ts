@@ -33,18 +33,34 @@ test.describe("motion safety", () => {
   test.describe("without JavaScript", () => {
     test.use({ javaScriptEnabled: false });
 
-    test("every section is visible", async ({ page }) => {
+    test("every section is visible, with no loader", async ({ page }) => {
       await page.goto("/");
       expect(await hiddenEntrances(page)).toEqual([]);
       await expect(page.getByText("5,886").first()).toBeAttached();
+      await expect(page.locator(".preloader")).toBeHidden();
     });
   });
 
   test("the failsafe reveals everything when scripts never arrive", async ({ page }) => {
     await page.route("**/_next/static/chunks/**/*.js", (route) => route.abort());
     await page.goto("/");
-    await page.waitForTimeout(3500);
+    // The loader (an inline script) still runs; the failsafe's clock starts when it lifts.
+    await page.waitForFunction(() => !document.documentElement.hasAttribute("data-preloading"));
+    await page.waitForTimeout(3300);
     expect(await hiddenEntrances(page)).toEqual([]);
+  });
+
+  test("the loader counts to 100 from the real load, then gets out of the way", async ({ page }) => {
+    await page.goto("/");
+    const loader = page.locator(".preloader");
+    await expect(loader).toHaveClass(/preloader--done/);
+    await expect(loader.locator("[data-preloader-count]")).toHaveText("100");
+    await expect(page.locator("html")).toHaveAttribute("data-preloaded-at", /^\d+$/);
+    expect(await page.evaluate(() => document.documentElement.hasAttribute("data-preloading"))).toBe(false);
+    await expect(loader).toBeHidden();
+    // The page scrolls again once it has lifted.
+    await page.mouse.wheel(0, 800);
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
   });
 
   test("with motion, content reveals as it scrolls into view", async ({ page }) => {
