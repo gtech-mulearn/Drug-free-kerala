@@ -1,24 +1,29 @@
-import { type ClassValue, clsx } from "clsx"
-import { twMerge } from "tailwind-merge"
+import { clsx, type ClassValue } from "clsx";
+import { extendTailwindMerge } from "tailwind-merge";
+
+/**
+ * tailwind-merge must know the custom theme scales from src/styles/theme.css.
+ * Without this it treats `text-display` (a size) as a colour and silently
+ * drops it when merged with `text-foreground`.
+ *
+ * Component installers (`shadcn init`) overwrite this file with a plain
+ * `cn`; src/lib/utils.test.ts fails if that happens.
+ */
+const twMerge = extendTailwindMerge({
+  extend: {
+    theme: {
+      text: ["hero", "display", "headline", "title", "statement", "counter", "poster"],
+      font: ["poster"],
+      tracking: ["display"],
+      radius: ["card", "panel", "tile"],
+      shadow: ["card", "raised"],
+      spacing: ["gutter", "section", "header"],
+      container: ["content"],
+      ease: ["standard", "emphasized", "out-expo"],
+    },
+  },
+});
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
-}
-
-// Generate a unique certificate ID with a specified prefix
-export function generateCertificateId(prefix: string = 'DFK'): string {
-  // Get current timestamp
-  const timestamp = Date.now().toString().slice(-8);
-  
-  // Generate a random 4-character alphanumeric string
-  const characters = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let randomStr = '';
-  
-  for (let i = 0; i < 4; i++) {
-    const randomIndex = Math.floor(Math.random() * characters.length);
-    randomStr += characters.charAt(randomIndex);
-  }
-  
-  // Combine prefix, timestamp, and random string with hyphens
-  return `${prefix}-${timestamp}-${randomStr}`;
+  return twMerge(clsx(inputs));
 }

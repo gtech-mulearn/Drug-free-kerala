@@ -1,0 +1,70 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "lenis/dist/lenis.css";
+@import "../styles/tokens.css";
+@import "../styles/theme.css";
+@import "../styles/motion.css";
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  /* With scripts, Lenis smooths scrolling. CSS smooth scrolling must stay off
+     then: it turns ScrollTrigger's measuring scrolls into racing animations. */
+  @media (scripting: none) and (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
+  }
+
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background font-sans text-foreground antialiased;
+  }
+
+  /* In-page anchors land below the fixed header. */
+  [id] {
+    scroll-margin-top: var(--spacing-header);
+  }
+
+  /* Baseline focus indicator; components may refine it (low specificity). */
+  :where(a, button, summary, [tabindex]):focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+/*
+ * Film grain: fractal noise as an inline SVG (img-src allows data:). Used by
+ * src/components/ui/grain.tsx at --grain-opacity.
+ */
+@utility bg-grain {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 220px 220px;
+}
+
+/*
+ * Aurora: soft mint and teal light pooling on the forest base (the pledge
+ * dialog's visual panel). Built only from brand tokens.
+ */
+@utility bg-aurora {
+  background-color: var(--background);
+  background-image:
+    radial-gradient(55% 45% at 78% 18%, color-mix(in oklab, var(--mark-end) 55%, transparent), transparent 70%),
+    radial-gradient(45% 40% at 22% 62%, color-mix(in oklab, var(--mark-start) 22%, transparent), transparent 70%),
+    radial-gradient(80% 60% at 50% 110%, color-mix(in oklab, var(--mark-end) 30%, transparent), transparent 70%);
+}

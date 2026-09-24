@@ -1,0 +1,223 @@
+/*
+ * Motion states. GSAP (src/components/motion) animates entrances FROM these
+ * CSS states, so nothing flashes before hydration.
+ *
+ * - Start states apply only when scripts can run and motion is welcome.
+ *   Without JavaScript, `scripting` is false and everything is visible.
+ * - [data-revealed] (set when an entrance finishes) and
+ *   html[data-motion="static"] (reduced motion, late start, failure) opt out.
+ * - Failsafe: until the runtime marks <html data-motion>, a delayed animation
+ *   reveals everything on its own. Keep 2.5s in sync with FAILSAFE_MS. It is
+ *   held while the page loader covers the page (html[data-preloading]), so
+ *   its clock starts when the loader finishes.
+ */
+
+@media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
+  html:not([data-motion="static"]) :is([data-reveal], [data-count]):not([data-revealed]) {
+    opacity: 0;
+    transform: translateY(1.5rem);
+  }
+
+  html:not([data-motion="static"]) [data-split]:not([data-revealed]) {
+    opacity: 0;
+  }
+
+  html:not([data-motion="static"]) [data-clip]:not([data-revealed]) {
+    clip-path: inset(100% 0 0 0);
+  }
+
+  html:not([data-motion="static"]) [data-warm-layer] {
+    opacity: 1;
+  }
+
+  html:not([data-motion]):not([data-preloading]) :is([data-reveal], [data-count], [data-split], [data-clip]) {
+    animation: motion-failsafe 0.6s var(--ease-out-expo) 2.5s forwards;
+  }
+}
+
+@keyframes motion-failsafe {
+  to {
+    opacity: 1;
+    transform: none;
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+/* Duotone layers (initiatives) show colour unless motion warms them in. */
+[data-warm-layer] {
+  opacity: 0;
+}
+
+/* ── Hero intro: pure CSS, so it starts at first paint (no hydration wait),
+      or, when the page loader shows, as its curtain lifts. */
+@media (prefers-reduced-motion: no-preference) {
+  .intro-line {
+    animation: intro-rise 1.1s var(--ease-out-expo) both;
+    animation-delay: calc(0.15s + var(--line, 0) * 0.08s);
+  }
+
+  .intro-fade {
+    animation: intro-fade 1s var(--ease-out-expo) both;
+    animation-delay: calc(0.3s + var(--line, 0) * 0.08s);
+  }
+
+  /* The hero photo is visible from the first frame (it is the LCP element):
+     it only settles from a slight zoom, never starts hidden. */
+  .intro-settle {
+    animation: intro-settle 1.6s var(--ease-out-expo) both;
+  }
+
+  /* Full-screen menu links rise in as the menu opens. */
+  [data-state="open"] .menu-line {
+    animation: intro-rise 0.8s var(--ease-out-expo) both;
+    animation-delay: calc(0.12s + var(--line, 0) * 0.06s);
+  }
+}
+
+@keyframes intro-rise {
+  from {
+    transform: translateY(105%);
+  }
+}
+
+@keyframes intro-fade {
+  from {
+    opacity: 0;
+    transform: translateY(1rem);
+  }
+}
+
+@keyframes intro-settle {
+  from {
+    transform: scale(1.12);
+  }
+}
+
+/*
+ * Hero photo frame: inset to the content column with rounded corners, opening
+ * to full bleed as --frame-open goes 0 → 1 (scrubbed by effects.initHeroFrame).
+ */
+.hero-frame {
+  --frame-open: 0;
+  --frame-inset: max(var(--spacing-gutter), calc((100% - var(--container-content)) / 2 + var(--spacing-gutter)));
+  clip-path: inset(
+    0 calc(var(--frame-inset) * (1 - var(--frame-open))) round calc(var(--radius-panel) * (1 - var(--frame-open)))
+  );
+}
+
+/*
+ * SplitText wraps each line in .split-line-mask (overflow: clip). Tight
+ * display line-heights would clip descenders (g, y), so the mask gets extra
+ * room below without moving the lines.
+ */
+.split-line-mask {
+  padding-bottom: 0.12em;
+  margin-bottom: -0.12em;
+}
+
+/*
+ * The journey timeline once keyboard focus has entered it: its scrubbed reveal
+ * is skipped and everything shows at rest, without moving the page.
+ * (!important: it overrides GSAP's inline styles.)
+ */
+[data-timeline-revealed] :is([data-timeline-body], [data-timeline-dot], [data-timeline-line]) {
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+/*
+ * Page loader (src/features/landing/lib/preloader-script.ts). An inline
+ * script builds it before first paint and removes it once the page's
+ * resources have loaded; without JavaScript it never exists.
+ */
+html[data-preloading] {
+  overflow: hidden;
+}
+
+/* The hero stays at rest behind the loader; its intro plays as it lifts. */
+html[data-preloading] :is(.intro-line, .intro-fade, .intro-settle) {
+  animation: none;
+}
+
+.preloader {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  padding: var(--spacing-gutter);
+  background: var(--background);
+  color: var(--foreground);
+  clip-path: inset(0 0 0 0);
+  transition: clip-path 1s var(--ease-out-expo);
+}
+
+.preloader--done {
+  clip-path: inset(0 0 100% 0);
+  pointer-events: none;
+}
+
+/* No JavaScript: the loader never runs, so it never shows. */
+@media (scripting: none) {
+  .preloader {
+    display: none;
+  }
+}
+
+/* If its script never runs (blocked, broken), the loader still lifts. */
+.preloader:not(.preloader--done) {
+  animation: preloader-expire 0.6s var(--ease-out-expo) 12s forwards;
+}
+
+@keyframes preloader-expire {
+  to {
+    clip-path: inset(0 0 100% 0);
+    visibility: hidden;
+  }
+}
+
+.preloader__dove {
+  place-self: center;
+  width: auto;
+  height: min(32vh, 16rem);
+  overflow: visible;
+  transition:
+    transform 0.8s var(--ease-out-expo),
+    opacity 0.5s var(--ease-out-expo);
+}
+
+.preloader--done .preloader__dove {
+  opacity: 0;
+  transform: translateY(-2rem);
+}
+
+.preloader__ghost {
+  fill: var(--foreground);
+  opacity: 0.07;
+}
+
+.preloader__footer {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.5rem;
+}
+
+.preloader__label {
+  padding-bottom: 0.6em;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--muted-foreground);
+}
+
+.preloader__count {
+  font-family: var(--font-bebas), "Arial Narrow", sans-serif;
+  font-size: clamp(5rem, 3rem + 9vw, 11rem);
+  line-height: 0.8;
+  font-variant-numeric: tabular-nums;
+}
+
+.preloader__count small {
+  font-size: 0.4em;
+  color: var(--highlight);
+}

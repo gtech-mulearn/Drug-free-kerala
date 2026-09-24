@@ -1,0 +1,137 @@
+/*
+ * Drug Free Kerala design tokens: the single source of truth for colour.
+ *
+ * Layer 1 · Palette (--palette-*)
+ *   Raw brand colours, taken from the logo (mint #71d884 → teal #23a093) plus
+ *   a deep forest base and green-tinted neutrals. Referenced ONLY by the
+ *   semantic layer below, never by components, and never exposed as Tailwind
+ *   utilities.
+ *
+ * Layer 2 · Semantic tokens
+ *   What a colour is FOR (background, primary, muted-foreground, …). These are
+ *   the only colours components may use; theme.css exposes them as utilities
+ *   (bg-primary, text-muted-foreground, border-input, …). This file holds
+ *   colours only; other theme values (grain opacity, radii) live in theme.css.
+ *
+ * Layer 3 · Themes
+ *   `:root` is the light theme. `.theme-inverse` re-maps the SAME semantic
+ *   names for forest surfaces (hero, journey band, header, footer, menu). A
+ *   component never branches on theme; it inherits the right values from the
+ *   nearest themed ancestor.
+ *
+ * Guarantees, enforced by src/test/design-system/*.test.ts:
+ *   · every text/surface pair below meets WCAG 2.2 AA (4.5:1) in both themes
+ *   · focus rings and input borders meet 3:1 against their surfaces
+ *   · components contain no raw colours, palette classes or `dark:` variants
+ *
+ * Adding a token: add it to BOTH theme blocks, map it in theme.css, add its
+ * pairs to src/test/design-system/contrast.test.ts, document it in
+ * docs/design-system.md.
+ */
+
+:root {
+  /* ── Layer 1 · Palette ──────────────────────────────────────────────── */
+  --palette-forest-950: #061a17;
+  --palette-forest-900: #0a2622; /* the dark base */
+  --palette-forest-800: #0f352f;
+  --palette-forest-700: #1f4a42;
+  --palette-forest-400: #6f8f86;
+  --palette-forest-200: #a3b8b1;
+
+  --palette-mint-50: #e8f7ea;
+  --palette-mint-100: #d3f0d8;
+  --palette-mint-400: #71d884; /* logo gradient, light end */
+
+  --palette-teal-500: #23a093; /* logo gradient, dark end (decorative only) */
+  --palette-teal-700: #17766c;
+
+  --palette-neutral-0: #ffffff;
+  --palette-neutral-50: #f4f5f2;
+  --palette-neutral-100: #eceee9;
+  --palette-neutral-300: #d5dbd7;
+  --palette-neutral-500: #7d8a85;
+  --palette-neutral-600: #4c5a55;
+  --palette-neutral-900: #0e1512;
+  --palette-neutral-1000: #000000;
+
+  --palette-red-400: #f97066;
+  --palette-red-700: #b42318;
+
+  /* ── Layer 2 · Semantic tokens, light theme ─────────────────────────── */
+  /* Surfaces */
+  --background: var(--palette-neutral-50);
+  --foreground: var(--palette-neutral-900);
+  --card: var(--palette-neutral-0);
+  --card-foreground: var(--palette-neutral-900);
+  --popover: var(--palette-neutral-0);
+  --popover-foreground: var(--palette-neutral-900);
+  --muted: var(--palette-neutral-100);
+  --muted-foreground: var(--palette-neutral-600);
+  --accent: var(--palette-mint-100);
+  --accent-foreground: var(--palette-neutral-900);
+  --surface-wash: var(--palette-mint-50);
+  --surface-wash-foreground: var(--palette-neutral-900);
+
+  /* Actions. Light surfaces get the solid forest pill; inside .theme-inverse
+     `primary` becomes mint with forest text. */
+  --primary: var(--palette-forest-900);
+  --primary-foreground: var(--palette-neutral-50);
+  --secondary: var(--palette-neutral-0);
+  --secondary-foreground: var(--palette-neutral-900);
+  --destructive: var(--palette-red-700);
+  --destructive-foreground: var(--palette-neutral-0);
+
+  /* Emphasis text (numbers, highlighted words). Teal #23a093 fails AA on
+     light surfaces (2.9:1), so light surfaces use teal-700 (5.0:1). */
+  --highlight: var(--palette-teal-700);
+
+  /* Brand: mint fills (tiles, ribbon, dots). Text placed ON a brand fill uses
+     --brand-foreground. mark-* are the logo gradient stops (decorative). */
+  --brand: var(--palette-mint-400);
+  --brand-foreground: var(--palette-forest-900);
+  --mark-start: var(--palette-mint-400);
+  --mark-end: var(--palette-teal-500);
+
+  /* Lines, focus, scrims */
+  --border: var(--palette-neutral-300);
+  --input: var(--palette-neutral-500);
+  --ring: var(--palette-teal-700);
+  --overlay: var(--palette-neutral-1000);
+}
+
+/* ── Layer 3 · Inverse theme (forest surfaces) ────────────────────────── */
+.theme-inverse {
+  color-scheme: dark;
+
+  --background: var(--palette-forest-900);
+  --foreground: var(--palette-neutral-50);
+  --card: var(--palette-forest-800);
+  --card-foreground: var(--palette-neutral-50);
+  --popover: var(--palette-forest-950);
+  --popover-foreground: var(--palette-neutral-50);
+  --muted: var(--palette-forest-800);
+  --muted-foreground: var(--palette-forest-200);
+  --accent: var(--palette-forest-800);
+  --accent-foreground: var(--palette-neutral-50);
+  --surface-wash: var(--palette-forest-950);
+  --surface-wash-foreground: var(--palette-neutral-50);
+
+  --primary: var(--palette-mint-400);
+  --primary-foreground: var(--palette-forest-900);
+  --secondary: var(--palette-forest-800);
+  --secondary-foreground: var(--palette-neutral-50);
+  --destructive: var(--palette-red-400);
+  --destructive-foreground: var(--palette-neutral-1000);
+
+  --highlight: var(--palette-mint-400);
+
+  --brand: var(--palette-mint-400);
+  --brand-foreground: var(--palette-forest-900);
+  --mark-start: var(--palette-mint-400);
+  --mark-end: var(--palette-teal-500);
+
+  --border: var(--palette-forest-700);
+  --input: var(--palette-forest-400);
+  --ring: var(--palette-mint-400);
+  --overlay: var(--palette-neutral-1000);
+}

@@ -1,176 +1,135 @@
-import * as React from "react"
-import * as LabelPrimitive from "@radix-ui/react-label"
-import { Slot } from "@radix-ui/react-slot"
-import {
-  Controller,
-  ControllerProps,
-  FieldPath,
-  FieldValues,
-  FormProvider,
-  useFormContext,
-} from "react-hook-form"
+import { LoaderCircle } from "lucide-react";
+import { useId } from "react";
+import type * as React from "react";
+import { cn } from "@/lib/utils";
 
-import { cn } from "@/lib/utils"
-import { Label } from "@/components/ui/label"
+/* ── Label ─────────────────────────────────────────────────────────────── */
 
-const Form = FormProvider
-
-type FormFieldContextValue<
-  TFieldValues extends FieldValues = FieldValues,
-  TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>
-> = {
-  name: TName
+export function Label({ className, htmlFor, ...props }: React.ComponentProps<"label">) {
+  return (
+    <label
+      data-slot="label"
+      htmlFor={htmlFor}
+      className={cn("text-sm font-medium leading-none", className)}
+      {...props}
+    />
+  );
 }
 
-const FormFieldContext = React.createContext<FormFieldContextValue>(
-  {} as FormFieldContextValue
-)
+/* ── Input ─────────────────────────────────────────────────────────────── */
 
-const FormField = <
-  TFieldValues extends FieldValues = FieldValues,
-  TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>
->({
+export function Input({ className, type = "text", ...props }: React.ComponentProps<"input">) {
+  return (
+    <input
+      type={type}
+      data-slot="input"
+      className={cn(
+        "flex h-12 w-full min-w-0 rounded-xl border border-input bg-card px-4 text-base text-card-foreground",
+        "transition-[border-color,box-shadow] duration-200 ease-standard placeholder:text-muted-foreground",
+        "outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/40",
+        "aria-invalid:border-destructive aria-invalid:ring-destructive/20",
+        "disabled:cursor-not-allowed disabled:opacity-50",
+        className,
+      )}
+      {...props}
+    />
+  );
+}
+
+/* ── Checkbox (native, so it works with FormData and assistive tech) ───── */
+
+export function Checkbox({ className, ...props }: Omit<React.ComponentProps<"input">, "type">) {
+  return (
+    <input
+      type="checkbox"
+      data-slot="checkbox"
+      className={cn(
+        "mt-0.5 size-5 shrink-0 cursor-pointer rounded-sm accent-primary",
+        "disabled:cursor-not-allowed disabled:opacity-50",
+        className,
+      )}
+      {...props}
+    />
+  );
+}
+
+/* ── FormField: wires label, description and error to one control ─────── */
+
+export type FieldControlProps = {
+  id: string;
+  name: string;
+  required?: boolean;
+  "aria-invalid"?: true;
+  "aria-describedby"?: string;
+};
+
+export type FormFieldProps = {
+  name: string;
+  label: React.ReactNode;
+  description?: React.ReactNode;
+  /** Validation messages for this field; the first one is shown. */
+  errors?: readonly string[];
+  required?: boolean;
+  className?: string;
+  children: (control: FieldControlProps) => React.ReactNode;
+};
+
+export function FormField({ name, label, description, errors, required, className, children }: FormFieldProps) {
+  const id = useId();
+  const descriptionId = description ? `${id}-description` : undefined;
+  const error = errors?.[0];
+  const errorId = error ? `${id}-error` : undefined;
+  const describedBy = [descriptionId, errorId].filter(Boolean).join(" ") || undefined;
+
+  return (
+    <div data-slot="form-field" className={cn("grid gap-2", className)}>
+      <Label htmlFor={id}>{label}</Label>
+      {children({
+        id,
+        name,
+        required,
+        "aria-invalid": error ? true : undefined,
+        "aria-describedby": describedBy,
+      })}
+      {description ? (
+        <p id={descriptionId} className="text-sm text-muted-foreground">
+          {description}
+        </p>
+      ) : null}
+      {error ? <FieldError id={errorId}>{error}</FieldError> : null}
+    </div>
+  );
+}
+
+export function FieldError({ className, ...props }: React.ComponentProps<"p">) {
+  return <p data-slot="field-error" className={cn("text-sm font-medium text-destructive", className)} {...props} />;
+}
+
+/* ── Alert: form-level status messages ─────────────────────────────────── */
+
+export function FormAlert({
+  tone = "destructive",
+  className,
   ...props
-}: ControllerProps<TFieldValues, TName>) => {
+}: React.ComponentProps<"div"> & { tone?: "destructive" | "info" }) {
   return (
-    <FormFieldContext.Provider value={{ name: props.name }}>
-      <Controller {...props} />
-    </FormFieldContext.Provider>
-  )
-}
-
-const useFormField = () => {
-  const fieldContext = React.useContext(FormFieldContext)
-  const itemContext = React.useContext(FormItemContext)
-  const { getFieldState, formState } = useFormContext()
-
-  const fieldState = getFieldState(fieldContext.name, formState)
-
-  if (!fieldContext) {
-    throw new Error("useFormField should be used within <FormField>")
-  }
-
-  const { id } = itemContext
-
-  return {
-    id,
-    name: fieldContext.name,
-    formItemId: `${id}-form-item`,
-    formDescriptionId: `${id}-form-item-description`,
-    formMessageId: `${id}-form-item-message`,
-    ...fieldState,
-  }
-}
-
-type FormItemContextValue = {
-  id: string
-}
-
-const FormItemContext = React.createContext<FormItemContextValue>(
-  {} as FormItemContextValue
-)
-
-const FormItem = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => {
-  const id = React.useId()
-
-  return (
-    <FormItemContext.Provider value={{ id }}>
-      <div ref={ref} className={cn("space-y-2", className)} {...props} />
-    </FormItemContext.Provider>
-  )
-})
-FormItem.displayName = "FormItem"
-
-const FormLabel = React.forwardRef<
-  React.ElementRef<typeof LabelPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof LabelPrimitive.Root>
->(({ className, ...props }, ref) => {
-  const { error, formItemId } = useFormField()
-
-  return (
-    <Label
-      ref={ref}
-      className={cn(error && "text-destructive", className)}
-      htmlFor={formItemId}
+    <div
+      role={tone === "destructive" ? "alert" : "status"}
+      data-slot="form-alert"
+      className={cn(
+        "rounded-lg border px-4 py-3 text-sm",
+        tone === "destructive"
+          ? "border-destructive/30 bg-destructive/10 text-destructive"
+          : "border-primary/30 bg-accent text-accent-foreground",
+        className,
+      )}
       {...props}
     />
-  )
-})
-FormLabel.displayName = "FormLabel"
+  );
+}
 
-const FormControl = React.forwardRef<
-  React.ElementRef<typeof Slot>,
-  React.ComponentPropsWithoutRef<typeof Slot>
->(({ ...props }, ref) => {
-  const { error, formItemId, formDescriptionId, formMessageId } = useFormField()
+/* ── Spinner ───────────────────────────────────────────────────────────── */
 
-  return (
-    <Slot
-      ref={ref}
-      id={formItemId}
-      aria-describedby={
-        !error
-          ? `${formDescriptionId}`
-          : `${formDescriptionId} ${formMessageId}`
-      }
-      aria-invalid={!!error}
-      {...props}
-    />
-  )
-})
-FormControl.displayName = "FormControl"
-
-const FormDescription = React.forwardRef<
-  HTMLParagraphElement,
-  React.HTMLAttributes<HTMLParagraphElement>
->(({ className, ...props }, ref) => {
-  const { formDescriptionId } = useFormField()
-
-  return (
-    <p
-      ref={ref}
-      id={formDescriptionId}
-      className={cn("text-sm text-muted-foreground", className)}
-      {...props}
-    />
-  )
-})
-FormDescription.displayName = "FormDescription"
-
-const FormMessage = React.forwardRef<
-  HTMLParagraphElement,
-  React.HTMLAttributes<HTMLParagraphElement>
->(({ className, children, ...props }, ref) => {
-  const { error, formMessageId } = useFormField()
-  const body = error ? String(error?.message) : children
-
-  if (!body) {
-    return null
-  }
-
-  return (
-    <p
-      ref={ref}
-      id={formMessageId}
-      className={cn("text-sm font-medium text-destructive", className)}
-      {...props}
-    >
-      {body}
-    </p>
-  )
-})
-FormMessage.displayName = "FormMessage"
-
-export {
-  useFormField,
-  Form,
-  FormItem,
-  FormLabel,
-  FormControl,
-  FormDescription,
-  FormMessage,
-  FormField,
+export function Spinner({ className, ...props }: React.ComponentProps<typeof LoaderCircle>) {
+  return <LoaderCircle aria-hidden="true" className={cn("size-4 animate-spin", className)} {...props} />;
 }
