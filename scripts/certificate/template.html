@@ -70,23 +70,47 @@
       }
       .mulearn {
         left: 96px;
-        top: 52px;
-        height: 48px;
+        top: 44px;
+        height: 64px;
         mask-position: left center;
       }
       .gtech {
         right: 96px;
-        top: 58px;
-        height: 38px;
+        top: 52px;
+        height: 50px;
         mask-position: right center;
       }
 
-      .logo {
+      /* Masthead: the Drug Free Kerala mark, centred, with a campaign logo on
+         each side. The flanks hang off its edges, so the mark stays centred. */
+      .masthead {
         left: 50%;
         top: 132px;
-        height: 156px;
         transform: translateX(-50%);
+      }
+      .logo {
+        display: block;
+        height: 156px;
         overflow: visible;
+      }
+      .flank {
+        position: absolute;
+        top: 50%;
+        display: flex;
+        align-items: center;
+        transform: translateY(-50%);
+      }
+      .flank-start {
+        right: 100%;
+      }
+      .flank-end {
+        left: 100%;
+      }
+      .flank img {
+        display: block;
+      }
+      .masthead .divider {
+        height: 96px;
       }
 
       /* Only the chosen language's pledge block is shown. */
@@ -164,35 +188,39 @@
       <div class="abs mask mulearn" style="{{MULEARN_STYLE}}"></div>
       <div class="abs mask gtech" style="{{GTECH_STYLE}}"></div>
 
-      <svg class="abs logo" viewBox="0 0 140 61">
-        <defs>
-          <linearGradient id="dove" x1="0" y1="0" x2="0.55" y2="1">
-            <stop offset="0" stop-color="#71d884" />
-            <stop offset="1" stop-color="#23a093" />
-          </linearGradient>
-          <linearGradient id="type" gradientUnits="userSpaceOnUse" x1="0" y1="11" x2="0" y2="29">
-            <stop offset="0" stop-color="#71d884" />
-            <stop offset="1" stop-color="#23a093" />
-          </linearGradient>
-        </defs>
-        <svg x="0" y="0" width="47" height="61" viewBox="0 0 47 61">
-          <path d="{{DOVE_PATH}}" fill="url(#dove)" />
-          <g fill="#304044">{{CAGE_RECTS}}</g>
+      <div class="abs masthead">
+        <div class="flank flank-start" id="flank-start"></div>
+        <svg class="logo" viewBox="0 0 140 61">
+          <defs>
+            <linearGradient id="dove" x1="0" y1="0" x2="0.55" y2="1">
+              <stop offset="0" stop-color="#71d884" />
+              <stop offset="1" stop-color="#23a093" />
+            </linearGradient>
+            <linearGradient id="type" gradientUnits="userSpaceOnUse" x1="0" y1="11" x2="0" y2="29">
+              <stop offset="0" stop-color="#71d884" />
+              <stop offset="1" stop-color="#23a093" />
+            </linearGradient>
+          </defs>
+          <svg x="0" y="0" width="47" height="61" viewBox="0 0 47 61">
+            <path d="{{DOVE_PATH}}" fill="url(#dove)" />
+            <g fill="#304044">{{CAGE_RECTS}}</g>
+          </svg>
+          <text x="57" y="29" font-size="25.71" textLength="79" lengthAdjust="spacingAndGlyphs" fill="url(#type)" font-family="Bebas Neue">DRUG FREE</text>
+          <text
+            x="57"
+            y="61"
+            font-size="38.57"
+            textLength="83"
+            lengthAdjust="spacingAndGlyphs"
+            fill="#304044"
+            stroke="#304044"
+            stroke-width="0.9"
+            paint-order="stroke"
+            font-family="Bebas Neue"
+          >KERALA</text>
         </svg>
-        <text x="57" y="29" font-size="25.71" textLength="79" lengthAdjust="spacingAndGlyphs" fill="url(#type)" font-family="Bebas Neue">DRUG FREE</text>
-        <text
-          x="57"
-          y="61"
-          font-size="38.57"
-          textLength="83"
-          lengthAdjust="spacingAndGlyphs"
-          fill="#304044"
-          stroke="#304044"
-          stroke-width="0.9"
-          paint-order="stroke"
-          font-family="Bebas Neue"
-        >KERALA</text>
-      </svg>
+        <div class="flank flank-end" id="flank-end"></div>
+      </div>
 
       <p class="abs centered i" lang="en">I,</p>
       <p class="abs centered statement statement-en" lang="en">
@@ -213,16 +241,20 @@
 
     <script>
       /*
-       * Partner logos, placed uniformly:
+       * Partner logos, beside the Drug Free Kerala mark (FLANKS) and along the
+       * bottom edge (PARTNERS), placed uniformly:
        * - trimmed to their visible artwork (stray marks and padding removed)
-       * - optically balanced: height = REFERENCE / aspect ** WEIGHT, so a wide
+       * - optically balanced: height = reference / aspect ** WEIGHT, so a wide
        *   wordmark and a tall emblem carry similar visual weight
        * - one centre line, equal clear space, a hairline divider in each gap
        */
+      const FLANKS = {{FLANKS}}; // [left, right]
       const PARTNERS = {{PARTNERS}};
-      const REFERENCE = 66; // height of a square logo, px
-      const WEIGHT = 0.45; // 0 = equal heights, 0.5 = equal areas
+      const FLANK_REFERENCE = 100; // height of a square logo beside the mark, px
+      const FLANK_GAP = 56;
+      const REFERENCE = 66; // height of a square logo in the bottom strip, px
       const GAP = 44; // clear space on each side of a divider
+      const WEIGHT = 0.45; // 0 = equal heights, 0.5 = equal areas
 
       function load(src) {
         return new Promise((resolve, reject) => {
@@ -262,6 +294,24 @@
         return out;
       }
 
+      async function logo(src, reference) {
+        const canvas = trim(await load(src));
+        const aspect = canvas.width / canvas.height;
+        const height = Math.round(reference / aspect ** WEIGHT);
+        const image = document.createElement("img");
+        image.src = canvas.toDataURL("image/png");
+        image.style.height = `${height}px`;
+        image.style.width = `${Math.round(height * aspect)}px`;
+        return image;
+      }
+
+      function divider(gap) {
+        const line = document.createElement("span");
+        line.className = "divider";
+        line.style.margin = `0 ${gap}px`;
+        return line;
+      }
+
       window.ready = (async () => {
         // Faces load only when visible text uses them; the other language's
         // block is hidden, so load every face up front.
@@ -273,24 +323,17 @@
           document.fonts.load("40px 'Bebas Neue'"),
         ]);
         await document.fonts.ready;
+        const [start, end] = await Promise.all(FLANKS.map((src) => logo(src, FLANK_REFERENCE)));
+        document.getElementById("flank-start").append(start, divider(FLANK_GAP));
+        document.getElementById("flank-end").append(divider(FLANK_GAP), end);
+
         const strip = document.getElementById("partners");
-        const trimmed = await Promise.all(PARTNERS.map(async (src) => trim(await load(src))));
-        trimmed.forEach((canvas, index) => {
-          const aspect = canvas.width / canvas.height;
-          const height = Math.round(REFERENCE / aspect ** WEIGHT);
-          const image = document.createElement("img");
-          image.src = canvas.toDataURL("image/png");
-          image.style.height = `${height}px`;
-          image.style.width = `${Math.round(height * aspect)}px`;
-          if (index > 0) {
-            const divider = document.createElement("span");
-            divider.className = "divider";
-            divider.style.margin = `0 ${GAP}px`;
-            strip.append(divider);
-          }
+        const logos = await Promise.all(PARTNERS.map((src) => logo(src, REFERENCE)));
+        logos.forEach((image, index) => {
+          if (index > 0) strip.append(divider(GAP));
           strip.append(image);
         });
-        await Promise.all([...strip.querySelectorAll("img")].map((image) => image.decode()));
+        await Promise.all([...document.querySelectorAll("#certificate img")].map((image) => image.decode()));
         return {
           poppins: document.fonts.check("600 30px Poppins"),
           malayalam: document.fonts.check("500 31px 'Noto Sans Malayalam'", "ഞാൻ"),

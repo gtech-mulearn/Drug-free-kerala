@@ -18,8 +18,10 @@ const IMAGES = path.join(ROOT, "src/assets/images");
 const LANGUAGES = ["en", "ml"];
 const output = (language) => path.join(IMAGES, `certificate-template-${language}.jpg`);
 
-/** Left to right: the two campaigns flank the Kerala Excise emblem. */
-const PARTNERS = ["logo-mayangilla Keralam.webp", "logo-Emblom.webp", "logo-operation-thunder.webp"];
+/** The two campaigns, left and right of the Drug Free Kerala mark. */
+const FLANKS = ["logo-mayangilla Keralam.webp", "logo-operation-thunder.webp"];
+/** The strip along the bottom edge. */
+const PARTNERS = ["logo-Emblom.webp"];
 
 const MIME = { ".png": "image/png", ".webp": "image/webp", ".jpg": "image/jpeg" };
 const dataUri = (file) =>
@@ -51,6 +53,7 @@ const html = readFileSync(path.join(ROOT, "scripts/certificate/template.html"), 
   .replace("{{CAGE_RECTS}}", cage)
   .replace("{{MULEARN_STYLE}}", maskStyle("logo-mulearn-white.png"))
   .replace("{{GTECH_STYLE}}", maskStyle("logo-gtech.png"))
+  .replace("{{FLANKS}}", JSON.stringify(FLANKS.map(dataUri)))
   .replace("{{PARTNERS}}", JSON.stringify(PARTNERS.map(dataUri)));
 
 const browser = await chromium.launch();
