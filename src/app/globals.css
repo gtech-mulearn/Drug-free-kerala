@@ -26,6 +26,11 @@
     @apply bg-background font-sans text-foreground antialiased;
   }
 
+  ::selection {
+    background-color: var(--brand);
+    color: var(--brand-foreground);
+  }
+
   /* In-page anchors land below the fixed header. */
   [id] {
     scroll-margin-top: var(--spacing-header);
