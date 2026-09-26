@@ -50,9 +50,11 @@ export const about = {
   eyebrow: "Who we are",
   title: { before: "Towards a", highlight: "Drug-Free", after: "Kerala" },
   body: "A powerful alliance between GTech, µLearn and the Kerala Excise Department, empowering youth with factual information about drugs so that they can make informed decisions and live drug-free.",
-  video: { id: "hR5dDT7omLM", title: "Towards a Drug-Free Kerala: campaign film" },
-  /** What the programme does, from the copy below. */
-  tags: ["Awareness", "Peer mentoring", "Sensitization", "Rehabilitation support", "Community"],
+  /** What the programme does, from the copy below; numbered in the panel. */
+  focus: {
+    label: "What we do",
+    items: ["Awareness", "Sensitization", "Peer mentoring", "Community", "Rehabilitation support"],
+  },
 } as const;
 
 export const whoWeAre = [
