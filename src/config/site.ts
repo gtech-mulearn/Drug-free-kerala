@@ -36,8 +36,8 @@ export const siteConfig = {
   },
 
   legal: [
-    { label: "Privacy Policy", href: "https://mulearn.org/privacypolicy" },
-    { label: "Terms of Service", href: "https://mulearn.org/termsandconditions" },
+    { label: "Privacy Policy", href: "https://mulearn.org/privacy-policy" },
+    { label: "Terms of Service", href: "https://mulearn.org/terms-and-conditions" },
   ],
 } as const;
 
