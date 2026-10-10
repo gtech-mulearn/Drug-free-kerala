@@ -6,6 +6,16 @@ import { CreateResponse, LookupResponse, TotalResponse } from "@/server/mulearn/
 
 export type PledgeInput = { name: string; email: string };
 
+/**
+ * create/'s student fields. A listed college sends its µLearn id and title;
+ * an unlisted one sends only the typed name. Stored, but never returned.
+ */
+export type StudentAnswer =
+  | { is_student: false }
+  | { is_student: true; college_id?: string; college_name: string };
+
+export type CreatePledgeInput = PledgeInput & StudentAnswer;
+
 export type CreatePledgeOutcome =
   | ({ status: "created" } & Certificate)
   | ({ status: "already_pledged" } & Certificate)
@@ -27,7 +37,7 @@ export async function getPledgeTotal(): Promise<number> {
   return total;
 }
 
-export async function createPledge(input: PledgeInput): Promise<CreatePledgeOutcome> {
+export async function createPledge(input: CreatePledgeInput): Promise<CreatePledgeOutcome> {
   const record = await mulearnRequest("create/", CreateResponse, { method: "POST", body: input });
   const certificate = { certificateId: formatCertificateId(record.id), name: record.name };
 

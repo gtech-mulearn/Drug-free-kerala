@@ -1,15 +1,21 @@
 import "server-only";
 import type { z } from "zod";
 
-const MULEARN_API_BASE_URL = "https://mulearn.org/api/v1/drugfreekerala/";
+/**
+ * The production APIs: this campaign's service, and µLearn's registration
+ * service (the college list). The env overrides point the server at a local
+ * backend or the e2e mock (see .env.example); deployments never set them.
+ */
+const MULEARN_APIS = {
+  drugfreekerala: { url: "https://mulearn.org/api/v1/drugfreekerala/", env: "MULEARN_API_BASE_URL" },
+  register: { url: "https://mulearn.org/api/v1/register/", env: "MULEARN_REGISTER_API_BASE_URL" },
+} as const;
 const DEFAULT_TIMEOUT_MS = 8000;
 
-/**
- * The production API. The e2e suite sets MULEARN_API_BASE_URL to point the
- * server at its mock (e2e/mock-upstream.mjs); deployments never set it.
- */
-function baseUrl(): string {
-  const url = process.env.MULEARN_API_BASE_URL || MULEARN_API_BASE_URL;
+export type MulearnApi = keyof typeof MULEARN_APIS;
+
+function baseUrl(api: MulearnApi): string {
+  const url = process.env[MULEARN_APIS[api].env] || MULEARN_APIS[api].url;
   return url.endsWith("/") ? url : `${url}/`;
 }
 
@@ -32,6 +38,8 @@ export class UpstreamError extends Error {
 }
 
 export type MulearnRequestOptions = {
+  /** Which µLearn service `path` is relative to. Defaults to "drugfreekerala". */
+  api?: MulearnApi;
   method?: "GET" | "POST";
   query?: Record<string, string>;
   body?: unknown;
@@ -41,7 +49,7 @@ export type MulearnRequestOptions = {
 };
 
 /**
- * The only function in the app that talks to the µLearn API. Enforces a
+ * The only function in the app that talks to the µLearn APIs. Enforces a
  * timeout and validates the response shape, so a backend change surfaces as
  * a typed error instead of a crash in the UI.
  */
@@ -50,7 +58,7 @@ export async function mulearnRequest<T extends z.ZodType>(
   schema: T,
   options: MulearnRequestOptions = {},
 ): Promise<z.output<T>> {
-  const url = new URL(path.replace(/^\//, ""), baseUrl());
+  const url = new URL(path.replace(/^\//, ""), baseUrl(options.api ?? "drugfreekerala"));
   for (const [key, value] of Object.entries(options.query ?? {})) url.searchParams.set(key, value);
 
   const headers: Record<string, string> = { Accept: "application/json" };

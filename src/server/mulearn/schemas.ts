@@ -32,3 +32,23 @@ export const LookupResponse = z.union([
   PledgeRecord.extend({ is_error: z.literal(false).optional() }),
   z.object({ is_error: z.literal(true), message: z.string() }),
 ]);
+
+/** One college, held to the limits create/ applies to `college_id` and `college_name`. */
+const College = z.object({
+  id: z.guid(),
+  title: z.string().trim().min(2).max(255),
+});
+
+/**
+ * GET https://mulearn.org/api/v1/register/colleges/ (µLearn's main backend)
+ * → {"hasError": false, ..., "response": {"colleges": [{"id", "title"}]}}.
+ * Observed 2026-10-10: 1,950 unsorted entries. An entry create/ would reject
+ * is dropped rather than failing the whole list.
+ */
+export const CollegesResponse = z.object({
+  response: z.object({
+    colleges: z
+      .array(College.nullable().catch(null))
+      .transform((colleges) => colleges.filter((college) => college !== null)),
+  }),
+});
