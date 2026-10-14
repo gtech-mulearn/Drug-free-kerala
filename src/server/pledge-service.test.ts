@@ -31,8 +31,8 @@ describe("getPledgeTotal", () => {
 
 describe("createPledge", () => {
   it("returns the new certificate", async () => {
-    fetchMock.mockResolvedValue(json({ id: 42, name: "Anjali Nair", email: "anjali@example.com" }));
-    await expect(createPledge({ name: "Anjali Nair", email: "anjali@example.com" })).resolves.toEqual({
+    fetchMock.mockResolvedValue(json({ message: "User created", id: 42, name: "Anjali Nair", email: "anjali@example.com" }));
+    await expect(createPledge({ name: "Anjali Nair", email: "anjali@example.com", is_student: false })).resolves.toEqual({
       status: "created",
       certificateId: "DKFC00042",
       name: "Anjali Nair",
@@ -40,13 +40,31 @@ describe("createPledge", () => {
     const { url, init } = lastRequest();
     expect(url).toBe("https://api.test/drugfreekerala/create/");
     expect(init.method).toBe("POST");
-    expect(JSON.parse(String(init.body))).toEqual({ name: "Anjali Nair", email: "anjali@example.com" });
+    expect(JSON.parse(String(init.body))).toEqual({ name: "Anjali Nair", email: "anjali@example.com", is_student: false });
     expect(init.cache).toBe("no-store");
+  });
+
+  it("sends a student's college with the pledge", async () => {
+    fetchMock.mockResolvedValue(json({ message: "User created", id: 42, name: "Anjali Nair", email: "anjali@example.com" }));
+    await createPledge({
+      name: "Anjali Nair",
+      email: "anjali@example.com",
+      is_student: true,
+      college_id: "02488535-1599-459f-adab-f3ef8fee2281",
+      college_name: "GOVERNMENT COLLEGE NEDUMANGAD",
+    });
+    expect(JSON.parse(String(lastRequest().init.body))).toEqual({
+      name: "Anjali Nair",
+      email: "anjali@example.com",
+      is_student: true,
+      college_id: "02488535-1599-459f-adab-f3ef8fee2281",
+      college_name: "GOVERNMENT COLLEGE NEDUMANGAD",
+    });
   });
 
   it("returns the existing certificate when a duplicate email comes with the same name", async () => {
     fetchMock.mockResolvedValue(json({ id: 7, name: "Anjali  Nair", email: "a@example.com", is_error: true }));
-    await expect(createPledge({ name: " anjali nair ", email: "a@example.com" })).resolves.toEqual({
+    await expect(createPledge({ name: " anjali nair ", email: "a@example.com", is_student: false })).resolves.toEqual({
       status: "already_pledged",
       certificateId: "DKFC00007",
       name: "Anjali  Nair",
@@ -55,7 +73,7 @@ describe("createPledge", () => {
 
   it("reveals nothing when a duplicate email comes with a different name", async () => {
     fetchMock.mockResolvedValue(json({ id: 7, name: "Someone Else", email: "a@example.com", is_error: true }));
-    const outcome = await createPledge({ name: "Anjali Nair", email: "a@example.com" });
+    const outcome = await createPledge({ name: "Anjali Nair", email: "a@example.com", is_student: false });
     expect(outcome).toEqual({ status: "email_taken" });
     expect(JSON.stringify(outcome)).not.toContain("Someone");
   });
@@ -63,7 +81,7 @@ describe("createPledge", () => {
   it("calls the production API when no override is set", async () => {
     vi.stubEnv("MULEARN_API_BASE_URL", "");
     fetchMock.mockResolvedValue(json({ id: 1, name: "A B", email: "a@example.com" }));
-    await createPledge({ name: "A B", email: "a@example.com" });
+    await createPledge({ name: "A B", email: "a@example.com", is_student: false });
     expect(lastRequest().url).toBe("https://mulearn.org/api/v1/drugfreekerala/create/");
   });
 });
@@ -110,7 +128,7 @@ describe("upstream failures", () => {
 
   it("raises a typed error on network failure", async () => {
     fetchMock.mockRejectedValue(new TypeError("fetch failed"));
-    const error = await createPledge({ name: "A B", email: "a@example.com" }).catch((e: unknown) => e);
+    const error = await createPledge({ name: "A B", email: "a@example.com", is_student: false }).catch((e: unknown) => e);
     expect(error).toBeInstanceOf(UpstreamError);
     expect((error as UpstreamError).kind).toBe("network");
     expect(JSON.stringify((error as UpstreamError).toLog())).not.toContain("a@example.com");

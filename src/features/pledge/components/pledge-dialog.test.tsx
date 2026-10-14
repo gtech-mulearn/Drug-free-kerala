@@ -114,7 +114,8 @@ describe("PledgeDialog", () => {
   });
 
   it("cannot be double-submitted while a request is in flight", async () => {
-    mocks.submitPledge.mockReturnValue(new Promise(() => {}));
+    let settle: (state: PledgeState) => void = () => {};
+    mocks.submitPledge.mockReturnValue(new Promise((resolve) => (settle = resolve)));
     const { user } = renderDialog();
     await fillValidForm(user);
     await user.click(screen.getByRole("button", { name: "Take the Pledge" }));
@@ -123,5 +124,223 @@ describe("PledgeDialog", () => {
     expect(button).toBeDisabled();
     await user.click(button);
     expect(mocks.submitPledge).toHaveBeenCalledTimes(1);
+
+    // React entangles pending async transitions: an action left pending
+    // would hold back every later test's action results.
+    settle({ status: "error" });
+    expect(await screen.findByRole("alert")).toBeInTheDocument();
+  });
+
+  describe("student and college", () => {
+    const COLLEGES = [
+      { id: "11111111-1111-4111-8111-111111111111", title: "GOVERNMENT COLLEGE NEDUMANGAD" },
+      { id: "22222222-2222-4222-8222-222222222222", title: "GOVERNMENT POLYTECHNIC COLLEGE NEDUMANGAD" },
+      { id: "33333333-3333-4333-8333-333333333333", title: "GOVT.ITI VAYALAR" },
+      { id: "44444444-4444-4444-8444-444444444444", title: "ST THOMAS COLLEGE RANNY" },
+    ];
+    const fetchMock = vi.fn<typeof fetch>();
+    const serveColleges = (colleges = COLLEGES) =>
+      fetchMock.mockResolvedValue(Response.json({ colleges }, { headers: { "Cache-Control": "public" } }));
+
+    const studentBox = () => screen.getByRole("checkbox", { name: "Are you a student?" });
+    const picker = () => screen.getByRole("combobox", { name: "College or school" });
+    const submitted = () => mocks.submitPledge.mock.calls[0]?.[1] as FormData;
+
+    async function becomeStudent(user: ReturnType<typeof userEvent.setup>) {
+      await user.click(studentBox());
+      await waitFor(() => expect(picker()).not.toHaveAttribute("aria-busy", "true"));
+    }
+
+    beforeEach(() => {
+      vi.stubGlobal("fetch", fetchMock);
+      serveColleges();
+    });
+
+    it("asks for a college only from students, and loads the list only then", async () => {
+      const { user } = renderDialog();
+      expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
+      expect(fetchMock).not.toHaveBeenCalled();
+
+      await becomeStudent(user);
+      expect(fetchMock).toHaveBeenCalledWith("/api/colleges");
+
+      await user.click(studentBox());
+      expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
+    });
+
+    it("sends no college fields from someone who is not a student", async () => {
+      const { user } = renderDialog();
+      await fillValidForm(user);
+      await user.click(screen.getByRole("button", { name: "Take the Pledge" }));
+
+      await waitFor(() => expect(mocks.submitPledge).toHaveBeenCalledTimes(1));
+      expect([...submitted().keys()].filter((key) => key !== "statements")).toEqual(["name", "email"]);
+    });
+
+    it("searches the list and submits the chosen college's id", async () => {
+      const { user } = renderDialog();
+      await fillValidForm(user);
+      await becomeStudent(user);
+
+      await user.type(picker(), "nedumangad gov");
+      expect(picker()).toHaveAttribute("aria-expanded", "true");
+      const listbox = screen.getByRole("listbox");
+      expect(picker()).toHaveAttribute("aria-controls", listbox.id);
+      expect(within(listbox).getAllByRole("option").map((option) => option.textContent)).toEqual([
+        "GOVERNMENT COLLEGE NEDUMANGAD",
+        "GOVERNMENT POLYTECHNIC COLLEGE NEDUMANGAD",
+        "Other (not listed)",
+      ]);
+
+      await user.click(screen.getByRole("option", { name: "GOVERNMENT POLYTECHNIC COLLEGE NEDUMANGAD" }));
+      expect(picker()).toHaveValue("GOVERNMENT POLYTECHNIC COLLEGE NEDUMANGAD");
+      expect(picker()).toHaveAttribute("aria-expanded", "false");
+
+      await user.click(screen.getByRole("button", { name: "Take the Pledge" }));
+      await waitFor(() => expect(mocks.submitPledge).toHaveBeenCalledTimes(1));
+      expect(submitted().get("is_student")).toBe("on");
+      expect(submitted().get("college_id")).toBe(COLLEGES[1]?.id);
+      expect(submitted().get("college_other")).toBeNull();
+    });
+
+    it("can be driven from the keyboard without submitting the form", async () => {
+      const { user } = renderDialog();
+      await becomeStudent(user);
+
+      await user.type(picker(), "college");
+      const active = () => document.getElementById(picker().getAttribute("aria-activedescendant") ?? "");
+      expect(active()).toHaveTextContent("GOVERNMENT COLLEGE NEDUMANGAD");
+      expect(active()).toHaveAttribute("aria-selected", "true");
+
+      await user.keyboard("{ArrowDown}{ArrowDown}{ArrowUp}{ArrowDown}");
+      expect(active()).toHaveTextContent("ST THOMAS COLLEGE RANNY");
+
+      await user.keyboard("{Enter}");
+      expect(picker()).toHaveValue("ST THOMAS COLLEGE RANNY");
+      expect(mocks.submitPledge).not.toHaveBeenCalled();
+    });
+
+    it("closes the list on Escape without closing the dialog", async () => {
+      const onOpenChange = vi.fn();
+      const user = userEvent.setup();
+      render(<PledgeDialog open onOpenChange={onOpenChange} onFindCertificate={onFindCertificate} />);
+      await becomeStudent(user);
+
+      await user.type(picker(), "thomas");
+      await user.keyboard("{Escape}");
+      expect(picker()).toHaveAttribute("aria-expanded", "false");
+      expect(onOpenChange).not.toHaveBeenCalled();
+
+      await user.keyboard("{Escape}");
+      expect(onOpenChange).toHaveBeenCalledWith(false);
+    });
+
+    it("forgets the chosen college once its name is edited", async () => {
+      const { user } = renderDialog();
+      await fillValidForm(user);
+      await becomeStudent(user);
+      await user.type(picker(), "vayalar");
+      await user.click(screen.getByRole("option", { name: "GOVT.ITI VAYALAR" }));
+
+      await user.type(picker(), "x");
+      await user.click(screen.getByRole("button", { name: "Take the Pledge" }));
+
+      expect(screen.getByText("Choose your college or school, or pick Other.")).toBeInTheDocument();
+      expect(mocks.submitPledge).not.toHaveBeenCalled();
+    });
+
+    it("lets students whose college isn't listed type its name, starting from their search", async () => {
+      const { user } = renderDialog();
+      await fillValidForm(user);
+      await becomeStudent(user);
+
+      await user.type(picker(), "GHSS Nedumangad");
+      expect(screen.getAllByRole("option").map((option) => option.textContent)).toEqual(["Other (not listed)"]);
+      await user.click(screen.getByRole("option", { name: "Other (not listed)" }));
+
+      const name = screen.getByRole("textbox", { name: "Name of your college or school" });
+      expect(name).toHaveValue("GHSS Nedumangad");
+      expect(name).toHaveFocus();
+      await user.clear(name);
+      await user.type(name, "GHSS Nedumangad Town");
+
+      await user.click(screen.getByRole("button", { name: "Take the Pledge" }));
+      await waitFor(() => expect(mocks.submitPledge).toHaveBeenCalledTimes(1));
+      expect(submitted().get("college_id")).toBe("other");
+      expect(submitted().get("college_other")).toBe("GHSS Nedumangad Town");
+    });
+
+    it("requires a college from students and focuses the picker", async () => {
+      const { user } = renderDialog();
+      await fillValidForm(user);
+      await becomeStudent(user);
+      await user.click(screen.getByRole("button", { name: "Take the Pledge" }));
+
+      expect(picker()).toHaveAttribute("aria-invalid", "true");
+      expect(picker()).toHaveAccessibleDescription("Choose your college or school, or pick Other.");
+      expect(picker()).toHaveFocus();
+      expect(mocks.submitPledge).not.toHaveBeenCalled();
+    });
+
+    it("requires the name of an unlisted college and focuses its field", async () => {
+      const { user } = renderDialog();
+      await fillValidForm(user);
+      await becomeStudent(user);
+      await user.click(picker());
+      await user.click(screen.getByRole("option", { name: "Other (not listed)" }));
+      await user.click(screen.getByRole("button", { name: "Take the Pledge" }));
+
+      const name = screen.getByRole("textbox", { name: "Name of your college or school" });
+      expect(name).toHaveAccessibleDescription("Enter the name of your college or school.");
+      expect(name).toHaveFocus();
+    });
+
+    it("shows the server's verdict on the chosen college", async () => {
+      respondWith({
+        status: "invalid",
+        fieldErrors: { college_id: ["We couldn't find that college. Search again, or pick Other."] },
+      });
+      const { user } = renderDialog();
+      await fillValidForm(user);
+      await becomeStudent(user);
+      await user.type(picker(), "ranny");
+      await user.keyboard("{Enter}");
+      await user.click(screen.getByRole("button", { name: "Take the Pledge" }));
+
+      await waitFor(() =>
+        expect(picker()).toHaveAccessibleDescription("We couldn't find that college. Search again, or pick Other."),
+      );
+    });
+
+    it("shows how many matches were left out of a long list", async () => {
+      serveColleges(
+        Array.from({ length: 60 }, (_, index) => ({
+          id: `00000000-0000-4000-8000-${String(index).padStart(12, "0")}`,
+          title: `COLLEGE ${String(index).padStart(2, "0")}`,
+        })),
+      );
+      const { user } = renderDialog();
+      await becomeStudent(user);
+      await user.type(picker(), "college");
+
+      expect(screen.getAllByRole("option")).toHaveLength(51);
+      expect(screen.getByText("Showing 50 of 60 matches. Keep typing to narrow them down.")).toBeInTheDocument();
+    });
+
+    it("falls back to typing the name when the list can't be loaded", async () => {
+      fetchMock.mockResolvedValue(Response.json({ error: "unavailable" }, { status: 503 }));
+      const { user } = renderDialog();
+      await fillValidForm(user);
+      await user.click(studentBox());
+
+      const name = await screen.findByRole("textbox", { name: "College or school" });
+      expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
+      await user.type(name, "Model College Madikai");
+      await user.click(screen.getByRole("button", { name: "Take the Pledge" }));
+
+      await waitFor(() => expect(mocks.submitPledge).toHaveBeenCalledTimes(1));
+      expect(submitted().get("college_id")).toBe("other");
+      expect(submitted().get("college_other")).toBe("Model College Madikai");
+    });
   });
 });

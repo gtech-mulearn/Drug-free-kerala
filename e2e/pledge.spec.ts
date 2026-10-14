@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
 import { openPage } from "./helpers";
 
 const STATEMENTS = [
@@ -11,17 +11,25 @@ const STATEMENTS = [
 
 const uniqueEmail = (label: string) => `${label}.${Date.now()}.${Math.random().toString(36).slice(2, 7)}@example.com`;
 
+/** The mock API (see playwright.config.ts). */
+const MOCK_API = "http://127.0.0.1:4010";
+
 async function openPledgeForm(page: Page) {
   await openPage(page);
   await page.getByRole("button", { name: "Take the Pledge" }).first().click();
   return page.getByRole("dialog", { name: "Join the Movement" });
 }
 
-async function submitPledge(page: Page, name: string, email: string) {
+async function fillPledgeForm(page: Page, name: string, email: string) {
   const dialog = await openPledgeForm(page);
   await dialog.getByLabel("Your name").fill(name);
   await dialog.getByLabel("Email").fill(email);
   for (const statement of STATEMENTS) await dialog.getByLabel(new RegExp(statement)).check();
+  return dialog;
+}
+
+async function submitPledge(page: Page, name: string, email: string) {
+  const dialog = await fillPledgeForm(page, name, email);
   await dialog.getByRole("button", { name: "Take the Pledge" }).click();
   // The dialog's accessible name follows its title, which changes per step.
   return page.getByRole("dialog");
@@ -91,6 +99,62 @@ test.describe("pledge", () => {
   test("#pledge deep link opens the form", async ({ page }) => {
     await openPage(page, "/#pledge");
     await expect(page.getByRole("dialog", { name: "Join the Movement" })).toBeVisible();
+  });
+});
+
+test.describe("students", () => {
+  /** What the mock's create/ stored for this email. */
+  async function stored(request: APIRequestContext, email: string) {
+    const response = await request.get(`${MOCK_API}/__pledges/?email=${encodeURIComponent(email)}`);
+    expect(response.ok()).toBe(true);
+    return response.json();
+  }
+
+  test("a student picks their college from the list", async ({ page, request }) => {
+    const email = uniqueEmail("student");
+    const dialog = await fillPledgeForm(page, "Anjali Nair", email);
+    await dialog.getByRole("checkbox", { name: "Are you a student?" }).check();
+
+    const picker = dialog.getByRole("combobox", { name: "College or school" });
+    await picker.fill("nedumangad govt");
+    await dialog.getByRole("option", { name: "GOVERNMENT POLYTECHNIC COLLEGE NEDUMANGAD", exact: true }).click();
+    await expect(picker).toHaveValue("GOVERNMENT POLYTECHNIC COLLEGE NEDUMANGAD");
+    await dialog.getByRole("button", { name: "Take the Pledge" }).click();
+
+    await expect(page.getByRole("dialog").getByRole("heading", { name: "Pledge successful!" })).toBeVisible();
+    expect(await stored(request, email)).toMatchObject({
+      is_student: true,
+      college_id: "9b3f1c2e-4d5a-4b6c-8d7e-0f1a2b3c4d5e",
+      college_name: "GOVERNMENT POLYTECHNIC COLLEGE NEDUMANGAD",
+    });
+  });
+
+  test("a student whose college isn't listed types its name", async ({ page, request }) => {
+    const email = uniqueEmail("unlisted");
+    const dialog = await fillPledgeForm(page, "Anjali Nair", email);
+    await dialog.getByRole("checkbox", { name: "Are you a student?" }).check();
+
+    await dialog.getByRole("combobox", { name: "College or school" }).fill("GHSS Nedumangad");
+    await dialog.getByRole("option", { name: "Other (not listed)" }).click();
+    const name = dialog.getByRole("textbox", { name: "Name of your college or school" });
+    await expect(name).toHaveValue("GHSS Nedumangad");
+    await expect(name).toBeFocused();
+    await dialog.getByRole("button", { name: "Take the Pledge" }).click();
+
+    await expect(page.getByRole("dialog").getByRole("heading", { name: "Pledge successful!" })).toBeVisible();
+    expect(await stored(request, email)).toMatchObject({
+      is_student: true,
+      college_id: null,
+      college_name: "GHSS Nedumangad",
+    });
+  });
+
+  test("someone who is not a student is recorded as such", async ({ page, request }) => {
+    const email = uniqueEmail("not-student");
+    const dialog = await submitPledge(page, "Anjali Nair", email);
+
+    await expect(dialog.getByRole("heading", { name: "Pledge successful!" })).toBeVisible();
+    expect(await stored(request, email)).toMatchObject({ is_student: false, college_id: null, college_name: null });
   });
 });
 

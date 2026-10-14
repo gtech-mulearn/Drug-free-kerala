@@ -10,7 +10,7 @@ The official site of [drugfreekerala.com](https://drugfreekerala.com), the anti-
 - **Styling:** Tailwind CSS v4 on a token-based design system; see [docs/design-system.md](docs/design-system.md).
 - **Backend-for-frontend:** Server Actions and route handlers call the µLearn API. The browser never calls it directly.
 - **Security:** CSP with a fresh nonce per request, per-IP rate limits, zod validation on both sides.
-- **Configuration:** none. Like the original site, the app only talks to the µLearn API (and YouTube for videos), and no environment variables are needed.
+- **Configuration:** none in production. Like the original site, the app only talks to the µLearn APIs (and YouTube for videos). Two optional variables point the server at a local backend or a mock instead; see [`.env.example`](.env.example).
 - **Tests:** Vitest and Testing Library for unit and component tests; Playwright for end-to-end tests against a production build.
 
 ## Getting started
@@ -21,7 +21,12 @@ npm ci
 npm run dev           # http://localhost:3000
 ```
 
-The dev server calls the real µLearn API, so pledges you submit locally are real. To work against a local fake instead, run `node e2e/mock-upstream.mjs`, then start the app with `MULEARN_API_BASE_URL=http://127.0.0.1:4010/ npm run dev`. That variable exists only for this and for the e2e suite.
+Without configuration the dev server calls the real µLearn API, so pledges you submit locally are real. To avoid that, copy `.env.example` to `.env.local` (gitignored) and set `MULEARN_API_BASE_URL` to one of:
+
+- your local [drugfreekerala-backend](https://github.com/gtech-mulearn/drugfreekerala-backend) (`http://127.0.0.1:5001/api/v1/drugfreekerala/`), or
+- the e2e mock: run `node e2e/mock-upstream.mjs`, then use `http://127.0.0.1:4010/`.
+
+The college list in the pledge form comes from µLearn's public registration API (`MULEARN_REGISTER_API_BASE_URL`), which is read-only, so leaving it unset is fine. Restart `npm run dev` after changing `.env.local`.
 
 | Script | What it does |
 |---|---|
@@ -57,9 +62,9 @@ docs/                     Audit report, design-system guide
 
 ## How a pledge works
 
-1. The browser validates the form with the same zod schema the server uses.
-2. The Server Action `submitPledge` validates again and checks the per-IP rate limit.
-3. `pledge-service` calls `POST create/` on the µLearn API, with a timeout and a check on the response shape.
+1. The browser validates the form with the same zod schema the server uses. Students also pick their college: the list loads from `/api/colleges` (µLearn's list, proxied and cached for a day) once "Are you a student?" is ticked, and "Other" lets them type a name. If the list can't load, they type the name.
+2. The Server Action `submitPledge` validates again and checks the per-IP rate limit. A college picked from the list is looked up in the server's own copy, so the stored title can't be forged.
+3. `pledge-service` calls `POST create/` on the µLearn API, with a timeout and a check on the response shape. The college is stored with the pledge but never returned or printed on the certificate.
 4. If the email has already pledged, the existing certificate is returned only when the submitted name matches. Otherwise the reply is "email already used", and the other person's name is never revealed.
 5. The certificate is drawn on a canvas in the browser and can be downloaded as PNG or shared.
 
@@ -67,7 +72,7 @@ Certificate lookup follows the same path (`GET get/?email=`) and requires both t
 
 ## Deployment
 
-The app is built for Vercel, and any Node 20.9+ host works too (`npm run build && npm start`). There are no environment variables to set.
+The app is built for Vercel, and any Node 20.9+ host works too (`npm run build && npm start`). There are no environment variables to set; leave the `MULEARN_*` overrides from `.env.example` unset.
 
 Rate limits are counted in each server instance's memory. That's enough to stop a single client hammering the form, but the counts aren't shared between instances.
 

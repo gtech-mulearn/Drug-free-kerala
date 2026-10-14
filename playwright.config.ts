@@ -32,7 +32,10 @@ export default defineConfig({
       url: baseURL,
       timeout: 300_000,
       reuseExistingServer: !process.env.CI,
-      env: { MULEARN_API_BASE_URL: `http://127.0.0.1:${UPSTREAM_PORT}/` },
+      env: {
+        MULEARN_API_BASE_URL: `http://127.0.0.1:${UPSTREAM_PORT}/`,
+        MULEARN_REGISTER_API_BASE_URL: `http://127.0.0.1:${UPSTREAM_PORT}/register/`,
+      },
     },
   ],
 });

@@ -20,9 +20,10 @@ import { CertificateView } from "@/features/certificate/components/certificate-v
 import type { Certificate } from "@/features/certificate/types";
 import { submitPledge } from "../actions";
 import { PLEDGE_STATEMENT_IDS, PLEDGE_STATEMENTS } from "../content";
-import { PledgeFormSchema } from "../schema";
-import { IDLE, type PledgeState } from "../types";
+import { PledgeFormSchema, readPledgeForm } from "../schema";
+import { IDLE, type PledgeField, type PledgeState } from "../types";
 import { CommonStatusAlert, useFocusFirstInvalid } from "./form-parts";
+import { StudentFields } from "./student-fields";
 
 type PledgeDialogProps = {
   open: boolean;
@@ -30,10 +31,20 @@ type PledgeDialogProps = {
   onFindCertificate: () => void;
 };
 
+/** Escape closes an open college list first, not the whole dialog. */
+function keepOpenForExpandedCombobox(event: KeyboardEvent) {
+  if (event.target instanceof Element && event.target.matches('[role="combobox"][aria-expanded="true"]')) {
+    event.preventDefault();
+  }
+}
+
 export function PledgeDialog({ open, onOpenChange, onFindCertificate }: PledgeDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="theme-inverse gap-0 p-0 sm:max-w-5xl sm:p-0 md:overflow-hidden">
+      <DialogContent
+        className="theme-inverse gap-0 p-0 sm:max-w-5xl sm:p-0 md:overflow-hidden"
+        onEscapeKeyDown={keepOpenForExpandedCombobox}
+      >
         {/* Remounted on every open, so each visit starts with a fresh form. */}
         <PledgeFlow onFindCertificate={onFindCertificate} />
       </DialogContent>
@@ -119,7 +130,7 @@ function PanelHeader({ title, description }: { title: string; description: strin
   );
 }
 
-type FieldErrors = Partial<Record<"name" | "email" | "statements", string[]>>;
+type FieldErrors = Partial<Record<PledgeField, string[]>>;
 
 function PledgeForm({
   state,
@@ -143,11 +154,7 @@ function PledgeForm({
     const data = new FormData(event.currentTarget);
 
     // Same schema as the server: instant feedback, identical messages.
-    const check = PledgeFormSchema.safeParse({
-      name: data.get("name") ?? "",
-      email: data.get("email") ?? "",
-      statements: data.getAll("statements"),
-    });
+    const check = PledgeFormSchema.safeParse(readPledgeForm(data));
     if (!check.success) {
       setClientErrors(z.flattenError(check.error).fieldErrors);
       return;
@@ -189,6 +196,8 @@ function PledgeForm({
             />
           )}
         </FormField>
+
+        <StudentFields errors={errors} />
 
         <fieldset className="grid gap-3" aria-describedby={statementsError ? statementsErrorId : undefined}>
           <legend className="mb-3 text-sm font-medium">
